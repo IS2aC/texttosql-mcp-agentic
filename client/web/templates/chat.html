@@ -1,0 +1,686 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Analytics Assistant</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --white:        #ffffff;
+      --surface:      #f5f8fc;
+      --border:       #dce8f5;
+      --border-light: #eaf2fb;
+      --sky-100:      #e0f0fb;
+      --sky-200:      #baddfa;
+      --sky-400:      #56aae0;
+      --sky-500:      #2e93d1;
+      --sky-600:      #1a7ab8;
+      --sky-700:      #135f8f;
+      --navy:         #0d2b45;
+      --text-primary: #1a2b3c;
+      --text-secondary:#4a6278;
+      --text-muted:   #8aa4bc;
+      --success:      #1a9e6e;
+      --error:        #c0392b;
+      --shadow-sm:    0 1px 3px rgba(13,43,69,.06);
+      --shadow-md:    0 4px 16px rgba(13,43,69,.08);
+      --radius:       12px;
+      --radius-sm:    8px;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 14.5px;
+      color: var(--text-primary);
+      background: var(--surface);
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* ── Header ── */
+    header {
+      background: var(--white);
+      border-bottom: 1.5px solid var(--border);
+      padding: 0 28px;
+      height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-shrink: 0;
+      box-shadow: var(--shadow-sm);
+      z-index: 10;
+    }
+    .header-brand { display: flex; align-items: center; gap: 12px; }
+    .header-logo {
+      width: 34px; height: 34px;
+      background: linear-gradient(135deg, var(--sky-500), var(--sky-700));
+      border-radius: 9px;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .header-logo svg { width: 18px; height: 18px; fill: none; stroke: white; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+    .header-title { font-size: 15px; font-weight: 600; color: var(--navy); letter-spacing: -.2px; }
+    .header-subtitle { font-size: 11.5px; color: var(--text-muted); }
+    .header-actions { display: flex; align-items: center; gap: 10px; }
+
+    .db-badge {
+      padding: 4px 12px; border-radius: 20px;
+      font-size: 11.5px; font-weight: 600; letter-spacing: .3px; text-transform: uppercase;
+    }
+    .db-badge.postgresql { background: #dbeafe; color: #1d4ed8; border: 1px solid #bfdbfe; }
+    .db-badge.mysql      { background: #ffedd5; color: #c2410c; border: 1px solid #fed7aa; }
+    .db-badge.excel      { background: #dcfce7; color: #15803d; border: 1px solid #bbf7d0; }
+    .db-badge.csv        { background: #f3f4f6; color: #374151; border: 1px solid #d1d5db; }
+    .db-badge.demo       { background: #f3e8ff; color: #7e22ce; border: 1px solid #e9d5ff; }
+
+    .status-badge {
+      display: flex; align-items: center; gap: 6px;
+      padding: 5px 11px;
+      background: #e8f8f1; border: 1px solid #b6e8d1;
+      border-radius: 20px; font-size: 11.5px; font-weight: 500; color: var(--success);
+    }
+    .status-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--success); animation: pulse-dot 2s ease infinite; }
+    @keyframes pulse-dot { 0%,100%{opacity:1} 50%{opacity:.4} }
+
+    .btn-action {
+      display: flex; align-items: center; gap: 6px;
+      padding: 6px 14px;
+      border: 1.5px solid var(--border); border-radius: var(--radius-sm);
+      background: var(--white); color: var(--text-secondary);
+      font-family: inherit; font-size: 12.5px; font-weight: 500;
+      cursor: pointer; transition: all .15s ease; text-decoration: none;
+    }
+    .btn-action:hover { border-color: var(--sky-400); color: var(--sky-600); background: var(--sky-100); }
+    .btn-action.danger:hover { border-color: #f87171; color: var(--error); background: #fdf2f2; }
+
+    /* ── Layout ── */
+    .workspace { display: flex; flex: 1; overflow: hidden; }
+
+    /* ── Sidebar ── */
+    .sidebar {
+      width: 240px; flex-shrink: 0;
+      background: var(--white); border-right: 1.5px solid var(--border);
+      padding: 20px 16px;
+      display: flex; flex-direction: column; gap: 24px;
+      overflow-y: auto;
+    }
+    .sidebar-section-title {
+      font-size: 10.5px; font-weight: 600; text-transform: uppercase;
+      letter-spacing: .8px; color: var(--text-muted); margin-bottom: 8px;
+    }
+    .schema-loading { font-size: 12px; color: var(--text-muted); font-family: 'DM Mono', monospace; padding: 8px 0; }
+
+    .schema-table { background: var(--surface); border: 1px solid var(--border-light); border-radius: var(--radius-sm); overflow: hidden; margin-bottom: 8px; }
+    .schema-table-header { display: flex; align-items: center; gap: 8px; padding: 9px 12px; background: var(--sky-100); border-bottom: 1px solid var(--border); }
+    .schema-table-name { font-size: 12px; font-weight: 600; color: var(--sky-700); font-family: 'DM Mono', monospace; }
+    .schema-table-icon { width: 14px; height: 14px; stroke: var(--sky-500); fill: none; stroke-width: 2; stroke-linecap: round; }
+    .schema-cols { padding: 8px 12px; display: flex; flex-direction: column; gap: 3px; }
+    .schema-col { font-size: 11px; color: var(--text-secondary); font-family: 'DM Mono', monospace; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .col-pk { color: var(--sky-500); font-weight: 600; }
+    .col-fk { color: #e67e22; }
+
+    .quick-queries { display: flex; flex-direction: column; gap: 6px; }
+    .quick-btn {
+      padding: 8px 12px;
+      background: var(--surface); border: 1px solid var(--border-light);
+      border-radius: var(--radius-sm);
+      font-family: inherit; font-size: 12px; color: var(--text-secondary);
+      text-align: left; cursor: pointer; transition: all .15s ease; line-height: 1.4;
+    }
+    .quick-btn:hover { background: var(--sky-100); border-color: var(--sky-200); color: var(--sky-700); }
+
+    /* ── Chat ── */
+    .chat-area { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+    .messages-container {
+      flex: 1; overflow-y: auto; padding: 28px 32px;
+      display: flex; flex-direction: column; gap: 20px; scroll-behavior: smooth;
+    }
+    .messages-container::-webkit-scrollbar { width: 5px; }
+    .messages-container::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+    .welcome { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; text-align: center; padding: 40px; animation: fade-in .5s ease; }
+    .welcome-icon { width: 56px; height: 56px; background: linear-gradient(135deg, var(--sky-100), var(--sky-200)); border: 2px solid var(--sky-200); border-radius: 16px; display: flex; align-items: center; justify-content: center; margin-bottom: 4px; }
+    .welcome-icon svg { width: 26px; height: 26px; stroke: var(--sky-600); fill: none; stroke-width: 1.8; stroke-linecap: round; }
+    .welcome h2 { font-size: 20px; font-weight: 600; color: var(--navy); }
+    .welcome p  { font-size: 13.5px; color: var(--text-muted); max-width: 320px; line-height: 1.6; }
+
+    .message { display: flex; gap: 12px; animation: slide-up .25s ease; }
+    @keyframes slide-up { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:none} }
+    @keyframes fade-in  { from{opacity:0} to{opacity:1} }
+    .message.user { flex-direction: row-reverse; }
+
+    .avatar { width: 32px; height: 32px; border-radius: 10px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 600; margin-top: 2px; }
+    .avatar-user { background: linear-gradient(135deg, var(--sky-500), var(--sky-700)); color: white; }
+    .avatar-ai   { background: var(--white); border: 1.5px solid var(--border); color: var(--sky-600); }
+    .avatar-ai svg { width: 16px; height: 16px; stroke: var(--sky-600); fill: none; stroke-width: 2; stroke-linecap: round; }
+
+    .bubble-wrap { display: flex; flex-direction: column; gap: 4px; max-width: 82%; }
+    .message.user .bubble-wrap { align-items: flex-end; }
+    .bubble { padding: 12px 16px; border-radius: var(--radius); line-height: 1.65; font-size: 14px; word-break: break-word; }
+    .bubble-user { background: linear-gradient(135deg, var(--sky-500), var(--sky-600)); color: white; border-bottom-right-radius: 4px; box-shadow: var(--shadow-sm); }
+    .bubble-ai   { background: var(--white); color: var(--text-primary); border: 1.5px solid var(--border-light); border-bottom-left-radius: 4px; box-shadow: var(--shadow-sm); }
+
+    /* ── Table Markdown rendu ── */
+    .table-wrapper {
+      overflow-x: auto;
+      margin: 12px 0 4px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .result-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-family: 'DM Mono', monospace;
+      font-size: 12px;
+      min-width: 320px;
+    }
+
+    .result-table thead tr {
+      background: var(--sky-100);
+    }
+
+    .result-table th {
+      padding: 9px 16px;
+      text-align: left;
+      font-weight: 600;
+      color: var(--sky-700);
+      white-space: nowrap;
+      border-bottom: 1.5px solid var(--sky-200);
+      letter-spacing: .2px;
+    }
+
+    .result-table td {
+      padding: 8px 16px;
+      color: var(--text-secondary);
+      border-bottom: 1px solid var(--border-light);
+      white-space: nowrap;
+    }
+
+    .result-table tbody tr:last-child td {
+      border-bottom: none;
+    }
+
+    .result-table tbody tr:hover td {
+      background: var(--sky-100);
+      color: var(--text-primary);
+    }
+
+    /* Compteur de lignes */
+    .table-meta {
+      font-size: 10.5px;
+      color: var(--text-muted);
+      margin-top: 5px;
+      padding-left: 2px;
+      font-family: 'DM Mono', monospace;
+    }
+
+    /* ── SQL block ── */
+    .sql-block { margin-top: 10px; background: #f0f7ff; border: 1px solid var(--sky-200); border-radius: var(--radius-sm); overflow: hidden; }
+    .sql-block-header { display: flex; align-items: center; gap: 6px; padding: 6px 12px; background: var(--sky-100); border-bottom: 1px solid var(--sky-200); }
+    .sql-block-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .8px; color: var(--sky-700); }
+    .sql-block-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--sky-500); margin-right: auto; }
+    .sql-copy-btn { background: none; border: none; cursor: pointer; color: var(--sky-500); padding: 2px 4px; border-radius: 4px; font-size: 11px; font-weight: 500; display: flex; align-items: center; gap: 4px; }
+    .sql-copy-btn:hover { color: var(--sky-700); }
+    .sql-code { font-family: 'DM Mono', monospace; font-size: 11.5px; line-height: 1.7; color: var(--navy); padding: 10px 14px; overflow-x: auto; white-space: pre; }
+
+    .msg-meta { font-size: 10.5px; color: var(--text-muted); display: flex; align-items: center; gap: 8px; padding: 0 4px; }
+    .meta-pill { padding: 2px 7px; background: var(--sky-100); border-radius: 10px; font-size: 10px; font-weight: 500; color: var(--sky-700); }
+
+    /* ── Typing ── */
+    .typing-indicator { display: none; flex-direction: row; gap: 12px; }
+    .typing-indicator.visible { display: flex; }
+    .typing-dots { background: var(--white); border: 1.5px solid var(--border-light); border-radius: var(--radius); border-bottom-left-radius: 4px; padding: 14px 18px; display: flex; align-items: center; gap: 5px; box-shadow: var(--shadow-sm); }
+    .typing-dots span { width: 6px; height: 6px; border-radius: 50%; background: var(--sky-400); animation: bounce-dot .9s ease infinite; }
+    .typing-dots span:nth-child(2) { animation-delay: .15s; }
+    .typing-dots span:nth-child(3) { animation-delay: .3s; }
+    @keyframes bounce-dot { 0%,80%,100%{transform:translateY(0);opacity:.6} 40%{transform:translateY(-5px);opacity:1} }
+
+    /* ── Input ── */
+    .input-area { padding: 16px 32px 20px; background: var(--white); border-top: 1.5px solid var(--border); flex-shrink: 0; }
+    .input-row { display: flex; align-items: flex-end; gap: 10px; background: var(--surface); border: 1.5px solid var(--border); border-radius: 14px; padding: 10px 12px; transition: border-color .2s, box-shadow .2s; }
+    .input-row:focus-within { border-color: var(--sky-400); box-shadow: 0 0 0 3px rgba(46,147,209,.10); }
+    #user-input { flex: 1; border: none; background: transparent; font-family: inherit; font-size: 14px; color: var(--text-primary); resize: none; outline: none; max-height: 160px; line-height: 1.5; min-height: 22px; }
+    #user-input::placeholder { color: var(--text-muted); }
+    .send-btn { width: 36px; height: 36px; border-radius: 10px; border: none; background: linear-gradient(135deg, var(--sky-500), var(--sky-600)); color: white; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: transform .15s, box-shadow .15s, opacity .15s; box-shadow: 0 2px 8px rgba(46,147,209,.35); }
+    .send-btn:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 4px 14px rgba(46,147,209,.4); }
+    .send-btn:disabled { opacity: .5; cursor: not-allowed; }
+    .send-btn svg { width: 17px; height: 17px; stroke: white; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+    .input-hint { margin-top: 6px; font-size: 11px; color: var(--text-muted); text-align: right; }
+
+    /* ── Toast ── */
+    .toast { position: fixed; bottom: 90px; right: 28px; padding: 10px 18px; border-radius: var(--radius-sm); font-size: 12.5px; font-weight: 500; animation: toast-in .25s ease; z-index: 100; box-shadow: var(--shadow-md); }
+    .toast-success { background: #eafaf3; border: 1px solid #b6e8d1; color: var(--success); }
+    .toast-error   { background: #fdf2f2; border: 1px solid #f5b7b1; color: var(--error); }
+    @keyframes toast-in { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:none} }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="header-brand">
+    <div class="header-logo">
+      <svg viewBox="0 0 24 24"><path d="M3 10h18M3 14h18M10 3v18M14 3v18" stroke-width="1.8"/></svg>
+    </div>
+    <div>
+      <div class="header-title">Analytics Assistant</div>
+      <div class="header-subtitle">Powered by MCP · {{ db_type | upper }}</div>
+    </div>
+  </div>
+  <div class="header-actions">
+    <span class="db-badge {{ db_type }}">{{ db_type }}</span>
+
+    <div class="status-badge" id="status-badge">
+      <div class="status-dot"></div>
+      <span id="status-text">Chargement...</span>
+    </div>
+
+    <button class="btn-action" onclick="resetConversation()">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
+        <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+        <path d="M3 3v5h5"/>
+      </svg>
+      Nouvelle session
+    </button>
+
+    <button class="btn-action danger" onclick="disconnect()">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
+        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+        <polyline points="16 17 21 12 16 7"/>
+        <line x1="21" y1="12" x2="9" y2="12"/>
+      </svg>
+      Quitter
+    </button>
+  </div>
+</header>
+
+<div class="workspace">
+  <aside class="sidebar">
+    <div>
+      <div class="sidebar-section-title">Schéma</div>
+      <div id="schema-container">
+        <div class="schema-loading">⏳ Chargement...</div>
+      </div>
+    </div>
+    <div>
+      <div class="sidebar-section-title">Raccourcis</div>
+      <div class="quick-queries">
+        <button class="quick-btn" onclick="quickSend('Liste les tables disponibles')">🗂 Lister les tables</button>
+        <button class="quick-btn" onclick="quickSend('Montre moi un aperçu de chaque table')">👁 Aperçu des données</button>
+        <button class="quick-btn" onclick="quickSend('Combien de lignes dans chaque table ?')">🔢 Compter les lignes</button>
+        <button class="quick-btn" onclick="quickSend('Quelles sont les colonnes de chaque table ?')">📋 Détail des colonnes</button>
+      </div>
+    </div>
+  </aside>
+
+  <div class="chat-area">
+    <div class="messages-container" id="messages">
+      <div class="welcome" id="welcome-screen">
+        <div class="welcome-icon">
+          <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        </div>
+        <h2>Bonjour, je suis votre assistant analytics</h2>
+        <p>Posez une question en langage naturel sur votre source <strong>{{ db_type | upper }}</strong>. Je génère et exécute le SQL automatiquement.</p>
+      </div>
+
+      <div class="typing-indicator" id="typing">
+        <div class="avatar avatar-ai">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg>
+        </div>
+        <div class="typing-dots"><span></span><span></span><span></span></div>
+      </div>
+    </div>
+
+    <div class="input-area">
+      <div class="input-row">
+        <textarea
+          id="user-input" rows="1"
+          placeholder="Ex : Quel est le produit le plus vendu ce trimestre ?"
+          onkeydown="handleKey(event)"
+          oninput="autoResize(this)"
+        ></textarea>
+        <button class="send-btn" id="send-btn" onclick="sendMessage()">
+          <svg viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+        </button>
+      </div>
+      <div class="input-hint">Entrée pour envoyer · Maj+Entrée pour nouvelle ligne</div>
+    </div>
+  </div>
+</div>
+
+<div id="toast-container"></div>
+
+<script>
+  const messagesEl = document.getElementById('messages');
+  const inputEl    = document.getElementById('user-input');
+  const sendBtn    = document.getElementById('send-btn');
+  const typingEl   = document.getElementById('typing');
+  const welcomeEl  = document.getElementById('welcome-screen');
+
+  let isLoading = false;
+
+  // ── Auto-resize textarea ──────────────────────────────
+  function autoResize(el) {
+    el.style.height = 'auto';
+    el.style.height = Math.min(el.scrollHeight, 160) + 'px';
+  }
+
+  function handleKey(e) {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+  }
+
+  function quickSend(text) {
+    inputEl.value = text;
+    autoResize(inputEl);
+    sendMessage();
+  }
+
+  function scrollBottom() { messagesEl.scrollTop = messagesEl.scrollHeight; }
+
+  function setLoading(state) {
+    isLoading = state;
+    sendBtn.disabled = state;
+    inputEl.disabled = state;
+    if (state) { typingEl.classList.add('visible'); messagesEl.appendChild(typingEl); }
+    else        { typingEl.classList.remove('visible'); }
+    scrollBottom();
+  }
+
+  // ── Convertit un bloc tableau Markdown en HTML <table> ──
+  function markdownTableToHtml(block) {
+    const rows = block.trim().split('\n').map(r =>
+      r.split('|')
+       .map(c => c.trim())
+       .filter(c => c !== '')
+    );
+
+    // Filtrer la ligne séparateur (---, :---:, etc.)
+    const filtered = rows.filter(row =>
+      !row.every(cell => /^[-:| ]+$/.test(cell))
+    );
+
+    if (filtered.length === 0) return null;
+
+    const [header, ...body] = filtered;
+
+    const thHtml = header
+      .map(h => `<th>${escapeHtml(h)}</th>`)
+      .join('');
+
+    const tbodyHtml = body
+      .map(row => {
+        const cells = header.map((_, i) =>
+          `<td>${escapeHtml(row[i] ?? '')}</td>`
+        ).join('');
+        return `<tr>${cells}</tr>`;
+      })
+      .join('');
+
+    const rowCount = body.length;
+    const colCount = header.length;
+
+    return `
+      <div class="table-wrapper">
+        <table class="result-table">
+          <thead><tr>${thHtml}</tr></thead>
+          <tbody>${tbodyHtml}</tbody>
+        </table>
+      </div>
+      <div class="table-meta">${rowCount} ligne${rowCount > 1 ? 's' : ''} · ${colCount} colonne${colCount > 1 ? 's' : ''}</div>`;
+  }
+
+  function escapeHtml(str) {
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
+  }
+
+  // ── Formatte le texte : tableaux + bold + sauts de ligne ──
+  function formatAnswer(raw) {
+    // Découpe le texte en segments : blocs tableau vs texte normal
+    const parts = [];
+    const lines = raw.split('\n');
+    let tableLines = [];
+    let textLines  = [];
+
+    const flushText = () => {
+      if (textLines.length) {
+        parts.push({ type: 'text', content: textLines.join('\n') });
+        textLines = [];
+      }
+    };
+    const flushTable = () => {
+      if (tableLines.length) {
+        parts.push({ type: 'table', content: tableLines.join('\n') });
+        tableLines = [];
+      }
+    };
+
+    for (const line of lines) {
+      if (line.trim().startsWith('|')) {
+        flushText();
+        tableLines.push(line);
+      } else {
+        flushTable();
+        textLines.push(line);
+      }
+    }
+    flushText();
+    flushTable();
+
+    // Rendre chaque segment
+    return parts.map(part => {
+      if (part.type === 'table') {
+        return markdownTableToHtml(part.content) || escapeHtml(part.content);
+      }
+      // Texte : escape → bold → sauts de ligne
+      let html = escapeHtml(part.content);
+      html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+      html = html.replace(/\n/g, '<br>');
+      return html;
+    }).join('');
+  }
+
+  // ── Append message ────────────────────────────────────
+  function appendMessage({ role, text, sql, tools, elapsed }) {
+    if (welcomeEl) welcomeEl.style.display = 'none';
+
+    const wrap = document.createElement('div');
+    wrap.className = `message ${role}`;
+
+    if (role === 'user') {
+      wrap.innerHTML = `
+        <div class="avatar avatar-user">U</div>
+        <div class="bubble-wrap">
+          <div class="bubble bubble-user">${escapeHtml(text)}</div>
+        </div>`;
+    } else {
+      let sqlHtml = '';
+      if (sql) {
+        const esc = escapeHtml(sql);
+        sqlHtml = `
+          <div class="sql-block">
+            <div class="sql-block-header">
+              <span class="sql-block-label">SQL exécuté</span>
+              <div class="sql-block-dot"></div>
+              <button class="sql-copy-btn" onclick="copySql(this, \`${sql.replace(/`/g,'\\`')}\`)">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+                  <rect x="9" y="9" width="13" height="13" rx="2"/>
+                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                </svg>Copier
+              </button>
+            </div>
+            <pre class="sql-code">${esc}</pre>
+          </div>`;
+      }
+
+      const toolPills = (tools || []).map(t => `<span class="meta-pill">${t}</span>`).join('');
+      const metaHtml  = elapsed !== undefined
+        ? `<div class="msg-meta"><span>${elapsed}s</span>${toolPills}</div>` : '';
+
+      wrap.innerHTML = `
+        <div class="avatar avatar-ai">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg>
+        </div>
+        <div class="bubble-wrap">
+          <div class="bubble bubble-ai">${formatAnswer(text)}${sqlHtml}</div>
+          ${metaHtml}
+        </div>`;
+    }
+
+    messagesEl.appendChild(wrap);
+    scrollBottom();
+  }
+
+  // ── Copy SQL ──────────────────────────────────────────
+  async function copySql(btn, sql) {
+    try {
+      await navigator.clipboard.writeText(sql);
+      btn.textContent = '✓ Copié';
+      setTimeout(() => {
+        btn.innerHTML = `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copier`;
+      }, 2000);
+    } catch { showToast('Impossible de copier', 'error'); }
+  }
+
+  // ── Toast ─────────────────────────────────────────────
+  function showToast(msg, type = 'success') {
+    const t = document.createElement('div');
+    t.className = `toast toast-${type}`;
+    t.textContent = msg;
+    document.getElementById('toast-container').appendChild(t);
+    setTimeout(() => t.remove(), 3000);
+  }
+
+  // ── Send message ──────────────────────────────────────
+  async function sendMessage() {
+    if (isLoading) return;
+    const text = inputEl.value.trim();
+    if (!text) return;
+
+    inputEl.value = '';
+    inputEl.style.height = 'auto';
+    appendMessage({ role: 'user', text });
+    setLoading(true);
+
+    try {
+      const res = await fetch('/chat/message', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: text }),
+      });
+
+      if (res.status === 401) { window.location.href = '/register'; return; }
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+      const data = await res.json();
+      setLoading(false);
+      appendMessage({
+        role: 'assistant',
+        text: data.answer,
+        sql: data.sql_used,
+        tools: data.tools_called,
+        elapsed: data.elapsed_s
+      });
+
+    } catch (err) {
+      setLoading(false);
+      appendMessage({ role: 'assistant', text: `Erreur : ${err.message}` });
+      showToast('Erreur serveur', 'error');
+    }
+  }
+
+  // ── Reset ─────────────────────────────────────────────
+  async function resetConversation() {
+    if (isLoading) return;
+    await fetch('/chat/reset', { method: 'POST' });
+
+    [...messagesEl.children].forEach(el => { if (el.id !== 'typing') el.remove(); });
+
+    const welcome = document.createElement('div');
+    welcome.className = 'welcome';
+    welcome.id = 'welcome-screen';
+    welcome.innerHTML = `
+      <div class="welcome-icon">
+        <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+      </div>
+      <h2>Nouvelle session démarrée</h2>
+      <p>Posez une question en langage naturel.</p>`;
+    messagesEl.insertBefore(welcome, messagesEl.firstChild);
+    showToast('Session réinitialisée');
+  }
+
+  // ── Disconnect ────────────────────────────────────────
+  async function disconnect() {
+    await fetch('/chat/disconnect', { method: 'POST' });
+    window.location.href = '/';
+  }
+
+  // ── Load schema ───────────────────────────────────────
+  async function loadSchema() {
+    try {
+      const res  = await fetch('/chat/schema');
+      const data = await res.json();
+      const container = document.getElementById('schema-container');
+
+      if (!data.tables || data.tables.length === 0) {
+        container.innerHTML = '<div class="schema-loading">Aucune table trouvée</div>';
+        return;
+      }
+
+      container.innerHTML = data.tables.map(table => `
+        <div class="schema-table">
+          <div class="schema-table-header">
+            <svg class="schema-table-icon" viewBox="0 0 24 24">
+              <rect x="3" y="3" width="18" height="18" rx="2"/>
+              <path d="M3 9h18M3 15h18M9 3v18"/>
+            </svg>
+            <span class="schema-table-name">${table.name}</span>
+          </div>
+          <div class="schema-cols">
+            ${table.columns.map(col => `
+              <span class="schema-col">
+                ${col.is_pk
+                  ? `<span class="col-pk">⬡ ${col.name}</span>`
+                  : col.is_fk
+                  ? `<span class="col-fk">→ ${col.name}</span>`
+                  : col.name}
+              </span>`).join('')}
+          </div>
+        </div>`).join('');
+
+    } catch {
+      document.getElementById('schema-container').innerHTML =
+        '<div class="schema-loading">Erreur de chargement</div>';
+    }
+  }
+
+  // ── Health check ──────────────────────────────────────
+  async function checkHealth() {
+    try {
+      const res  = await fetch('/health');
+      const data = await res.json();
+      document.getElementById('status-text').textContent = `${data.tools_loaded} outils`;
+    } catch {
+      const badge = document.getElementById('status-badge');
+      badge.style.background = '#fdf2f2';
+      badge.style.borderColor = '#f5b7b1';
+      badge.style.color = 'var(--error)';
+      badge.querySelector('.status-dot').style.background = 'var(--error)';
+      document.getElementById('status-text').textContent = 'Déconnecté';
+    }
+  }
+
+  // Init
+  checkHealth();
+  loadSchema();
+</script>
+</body>
+</html>
