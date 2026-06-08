@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Analytics Assistant</title>
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --white:          #ffffff;
+      --surface:        #f5f8fc;
+      --surface-alt:    #e8ecf1;
+      --border:         #dce8f5;
+      --border-light:   #eaf2fb;
+      --sky-100:        #e0f0fb;
+      --sky-200:        #baddfa;
+      --sky-400:        #56aae0;
+      --sky-500:        #2e93d1;
+      --sky-600:        #1a7ab8;
+      --sky-700:        #135f8f;
+      --navy:           #0d2b45;
+      --text-primary:   #1e293b;
+      --text-secondary: #4a6278;
+      --text-muted:     #8aa4bc;
+      --success:        #1a9e6e;
+      --success-bg:     #e8f8f1;
+      --success-border: #b6e8d1;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Sora', sans-serif;
+      background: var(--surface);
+      color: var(--text-primary);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ─── NOISE TEXTURE OVERLAY ─── */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* ─── HEADER ─── */
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      height: 56px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 32px;
+      background: rgba(245, 248, 252, 0.85);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .header-brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .logo-mark {
+      width: 30px;
+      height: 30px;
+      background: linear-gradient(135deg, var(--sky-500), var(--sky-700));
+      border-radius: 8px;
+      display: grid;
+      place-items: center;
+    }
+
+    .logo-mark svg {
+      width: 16px;
+      height: 16px;
+      stroke: white;
+      fill: none;
+      stroke-width: 1.8;
+      stroke-linecap: round;
+    }
+
+    .brand-name {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--navy);
+      letter-spacing: -0.2px;
+    }
+
+    .brand-sep {
+      width: 1px;
+      height: 14px;
+      background: var(--border);
+      margin: 0 2px;
+    }
+
+    .brand-sub {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      color: var(--text-muted);
+      letter-spacing: 0.3px;
+    }
+
+    .status-pill {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      background: var(--success-bg);
+      border: 1px solid var(--success-border);
+      border-radius: 99px;
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--success);
+    }
+
+    .status-dot {
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: var(--success);
+      animation: blink 2.4s ease infinite;
+    }
+
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.3; }
+    }
+
+    /* ─── MAIN LAYOUT ─── */
+    main {
+      position: relative;
+      z-index: 1;
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 80px 32px 100px;
+    }
+
+    /* ─── EYEBROW ─── */
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--sky-600);
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
+      margin-bottom: 28px;
+      opacity: 0;
+      animation: rise 0.6s 0.1s ease forwards;
+    }
+
+    .eyebrow-line {
+      width: 24px;
+      height: 1px;
+      background: var(--sky-400);
+    }
+
+    /* ─── HERO ─── */
+    .hero-title {
+      font-size: clamp(2.4rem, 5vw, 3.6rem);
+      font-weight: 700;
+      line-height: 1.1;
+      letter-spacing: -1.5px;
+      color: var(--navy);
+      margin-bottom: 20px;
+      opacity: 0;
+      animation: rise 0.6s 0.2s ease forwards;
+    }
+
+    .hero-title em {
+      font-style: normal;
+      color: var(--sky-600);
+    }
+
+    .hero-desc {
+      font-size: 16px;
+      color: var(--text-secondary);
+      line-height: 1.75;
+      max-width: 560px;
+      margin-bottom: 48px;
+      font-weight: 400;
+      opacity: 0;
+      animation: rise 0.6s 0.3s ease forwards;
+    }
+
+    /* ─── FEATURE TAGS ─── */
+    .feature-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 64px;
+      opacity: 0;
+      animation: rise 0.6s 0.4s ease forwards;
+    }
+
+    .tag {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      border: 1px solid var(--border);
+      border-radius: 99px;
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text-secondary);
+      background: var(--white);
+      transition: border-color 0.2s, color 0.2s;
+    }
+
+    .tag:hover {
+      border-color: var(--sky-300);
+      color: var(--sky-600);
+    }
+
+    .tag svg {
+      width: 13px;
+      height: 13px;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    /* ─── DIVIDER ─── */
+    .section-label {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: var(--text-muted);
+      margin-bottom: 20px;
+      opacity: 0;
+      animation: rise 0.6s 0.5s ease forwards;
+    }
+
+    /* ─── CARDS ─── */
+    .cards {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      opacity: 0;
+      animation: rise 0.6s 0.6s ease forwards;
+    }
+
+    @media (max-width: 640px) {
+      .cards { grid-template-columns: 1fr; }
+    }
+
+    .card {
+      position: relative;
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 32px;
+      text-decoration: none;
+      color: inherit;
+      overflow: hidden;
+      transition: border-color 0.25s, box-shadow 0.25s, transform 0.25s;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .card::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(145deg, rgba(46,147,209,0.04) 0%, transparent 60%);
+      opacity: 0;
+      transition: opacity 0.3s;
+      pointer-events: none;
+    }
+
+    .card:hover {
+      border-color: var(--sky-200);
+      box-shadow: 0 8px 32px rgba(13,43,69,0.08);
+      transform: translateY(-3px);
+    }
+
+    .card:hover::after {
+      opacity: 1;
+    }
+
+    /* Card icon */
+    .card-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 10px;
+      display: grid;
+      place-items: center;
+      margin-bottom: 20px;
+      transition: transform 0.3s ease;
+    }
+
+    .card:hover .card-icon {
+      transform: scale(1.08);
+    }
+
+    .card-icon svg {
+      width: 22px;
+      height: 22px;
+      fill: none;
+      stroke-width: 1.8;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    /* Blue */
+    .card:nth-child(1) .card-icon {
+      background: var(--sky-100);
+      border: 1px solid var(--sky-200);
+    }
+    .card:nth-child(1) .card-icon svg { stroke: var(--sky-600); }
+    .card:nth-child(1):hover .card-icon { background: linear-gradient(135deg, var(--sky-500), var(--sky-700)); border-color: transparent; }
+    .card:nth-child(1):hover .card-icon svg { stroke: white; }
+
+    /* Purple */
+    .card:nth-child(2) .card-icon {
+      background: #ede9fe;
+      border: 1px solid #ddd6fe;
+    }
+    .card:nth-child(2) .card-icon svg { stroke: #7c3aed; }
+    .card:nth-child(2):hover .card-icon { background: linear-gradient(135deg, #7c3aed, #6d28d9); border-color: transparent; }
+    .card:nth-child(2):hover .card-icon svg { stroke: white; }
+
+    .card-title {
+      font-size: 17px;
+      font-weight: 600;
+      color: var(--navy);
+      margin-bottom: 10px;
+      letter-spacing: -0.3px;
+    }
+
+    .card-desc {
+      font-size: 13.5px;
+      color: var(--text-secondary);
+      line-height: 1.65;
+      flex: 1;
+      margin-bottom: 24px;
+    }
+
+    /* Bullets */
+    .card-bullets {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-bottom: 28px;
+    }
+
+    .card-bullet {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      font-size: 12px;
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+
+    .bullet-dot {
+      width: 4px;
+      height: 4px;
+      border-radius: 50%;
+      background: var(--sky-400);
+      margin-top: 6px;
+      flex-shrink: 0;
+    }
+
+    /* CTA row */
+    .card-cta {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12.5px;
+      font-weight: 500;
+      color: var(--sky-600);
+      padding-top: 20px;
+      border-top: 1px solid var(--border-light);
+      transition: gap 0.2s;
+    }
+
+    .card:hover .card-cta {
+      gap: 10px;
+    }
+
+    .card-cta svg {
+      width: 14px;
+      height: 14px;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      transition: transform 0.2s;
+    }
+
+    .card:hover .card-cta svg {
+      transform: translateX(2px);
+    }
+
+    /* Disabled state */
+    .card.disabled {
+      cursor: default;
+      pointer-events: none;
+    }
+
+    .card.disabled .card-cta {
+      color: var(--text-muted);
+    }
+
+    .soon-badge {
+      display: inline-block;
+      padding: 2px 8px;
+      background: var(--surface-alt);
+      border: 1px solid var(--border);
+      border-radius: 99px;
+      font-size: 10px;
+      font-weight: 600;
+      color: var(--text-muted);
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      margin-left: 8px;
+      vertical-align: middle;
+    }
+
+    /* ─── ANIMATION ─── */
+    @keyframes rise {
+      from { opacity: 0; transform: translateY(16px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ─── FOOTER LINE ─── */
+    .footer-note {
+      margin-top: 64px;
+      font-size: 11.5px;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      opacity: 0;
+      animation: rise 0.5s 0.9s ease forwards;
+    }
+
+    .footer-note::before {
+      content: '';
+      width: 20px;
+      height: 1px;
+      background: var(--border);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- HEADER -->
+  <header>
+    <div class="header-brand">
+      <div class="logo-mark">
+        <svg viewBox="0 0 24 24">
+          <path d="M3 10h18M3 14h18M10 3v18M14 3v18"/>
+        </svg>
+      </div>
+      <span class="brand-name">Analytics Assistant</span>
+      <div class="brand-sep"></div>
+      <span class="brand-sub">SQL · PYTHON · MCP</span>
+    </div>
+    <div class="status-pill">
+      <span class="status-dot"></span>
+      Opérationnel
+    </div>
+  </header>
+
+  <!-- MAIN -->
+  <main>
+
+    <!-- Eyebrow -->
+    <div class="eyebrow">
+      <span class="eyebrow-line"></span>
+      Prompt to Insights
+    </div>
+
+    <!-- Hero -->
+    <h1 class="hero-title">
+      Vos données,<br>
+      <em>interrogées en langage naturel.</em>
+    </h1>
+
+    <p class="hero-desc">
+      Transformez n'importe quelle question métier en requête SQL optimisée.
+      Connectez vos sources de données et obtenez des insights en quelques secondes, sans écrire une seule ligne de code.
+    </p>
+
+    <!-- Feature tags -->
+    <div class="feature-tags">
+      <div class="tag">
+        <svg viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+        Analyse instantanée
+      </div>
+      <div class="tag">
+        <svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        Données sécurisées
+      </div>
+      <div class="tag">
+        <svg viewBox="0 0 24 24"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+        Sans nouveau langage
+      </div>
+      <div class="tag">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
+        Requêtes en temps réel
+      </div>
+    </div>
+
+    <!-- Section label -->
+    <div class="section-label">— Choisir un assistant</div>
+
+    <!-- Cards -->
+    <div class="cards">
+
+      <!-- Card 1: Analytics Agentic -->
+      <a href="/register" class="card">
+        <div class="card-icon">
+          <svg viewBox="0 0 24 24">
+            <ellipse cx="12" cy="5" rx="9" ry="3"/>
+            <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/>
+            <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/>
+          </svg>
+        </div>
+        <div class="card-title">Analytics Agentic</div>
+        <p class="card-desc">
+          Connectez PostgreSQL, MySQL, Oracle et toutes vos bases de données. Posez vos questions en français, obtenez du SQL optimisé et les résultats en un clic.
+        </p>
+        <div class="card-bullets">
+          <div class="card-bullet">
+            <span class="bullet-dot"></span>
+            Requêtes en langage naturel vers SQL
+          </div>
+          <div class="card-bullet">
+            <span class="bullet-dot"></span>
+            Compatible toutes sources de données
+          </div>
+          <div class="card-bullet">
+            <span class="bullet-dot"></span>
+            Aucune compétence technique requise
+          </div>
+        </div>
+        <div class="card-cta">
+          Accéder à l'assistant
+          <svg viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+        </div>
+      </a>
+
+      <!-- Card 2: SI Doc -->
+      <a href="#" class="card disabled">
+        <div class="card-icon">
+          <svg viewBox="0 0 24 24">
+            <path d="M12 2L2 7v10c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7l-10-5z"/>
+          </svg>
+        </div>
+        <div class="card-title">
+          SI Documentation
+          <span class="soon-badge">Bientôt</span>
+        </div>
+        <p class="card-desc">
+          Cartographiez et documentez automatiquement votre système d'information et vos schémas de bases de données.
+        </p>
+        <div class="card-bullets">
+          <div class="card-bullet">
+            <span class="bullet-dot"></span>
+            Vue 360° de votre système d'information
+          </div>
+          <div class="card-bullet">
+            <span class="bullet-dot"></span>
+            Documentation auto-générée
+          </div>
+          <div class="card-bullet">
+            <span class="bullet-dot"></span>
+            Onboarding accéléré
+          </div>
+        </div>
+        <div class="card-cta">
+          Bientôt disponible
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
+        </div>
+      </a>
+
+    </div>
+
+    <!-- Footer note -->
+    <div class="footer-note">
+      Vos données ne quittent jamais votre infrastructure.
+    </div>
+
+  </main>
+
+</body>
+</html>

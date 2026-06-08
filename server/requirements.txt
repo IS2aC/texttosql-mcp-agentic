@@ -1,0 +1,11 @@
+fastmcp 
+ollama 
+requests
+psycopg2-binary
+flask
+loguru
+python-dotenv
+duckdb
+pandas
+groq
+mysql-connector-python

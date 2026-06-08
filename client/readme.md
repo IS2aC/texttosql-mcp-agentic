@@ -1,22 +1,5 @@
-# texttosql-mcp-agentic
-
-
-
 ## SCHEMA FILES
-<pre>
-mcp-agentic-analytics/
-│
-├── server/                          # MCP Server
-│   ├── main.py
-│   ├── session.py
-│   ├── connectors/
-│   │   ├── base.py
-│   │   ├── postgresql.py
-│   │   ├── mysql.py
-│   │   └── excel_csv.py
-│   └── tools/
-│       ├── schema_tools.py
-│       └── query_tools.py
+
 │
 ├── client/
 │   ├── web/                         # Client Web Flask
@@ -40,18 +23,3 @@ mcp-agentic-analytics/
 │   │
 │   └── cli/                         # Client CLI
 │       └── main.py
-│
-├── shared/                          # Partagé web + CLI
-│   ├── __init__.py
-│   ├── prompt_generator.py          # SystemPromptGenerator
-│   └── prompts/                     # .txt par db_type
-│       ├── postgresql.txt
-│       ├── mysql.txt
-│       ├── excel.txt
-│       ├── csv.txt
-│       └── demo.txt
-│
-├── logs/
-├── .env
-└── requirements.txt
-</pre>

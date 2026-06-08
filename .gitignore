@@ -1,0 +1,7 @@
+__pycache__
+.venv
+server/.env
+client/.env
+__init__.py
+
+system_prompts/

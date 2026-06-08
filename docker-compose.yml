@@ -1,0 +1,56 @@
+services:
+  # ── MCP Server ────────────────────────────────────────────────────────────
+  server:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    container_name: mcp-server
+    environment:
+      - OLLAMA_HOST=http://host.docker.internal:11434
+      - FASTMCP_HOST=0.0.0.0
+      - FASTMCP_PORT=8000
+    env_file:
+      - ./server/.env
+    ports:
+      - "49154:8000"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: unless-stopped
+    networks:
+      - internal
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/sse')"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 15s
+
+  # ── Client Web (Flask) ────────────────────────────────────────────────────
+  client:
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+    container_name: mcp-client
+    environment:
+      - MCP_SERVER_URL=http://server:8000/sse
+      - OLLAMA_HOST=http://host.docker.internal:11434
+    env_file:
+      - ./client/.env
+    volumes:
+      - prompts_data:/app/web/system_prompts
+    ports:
+      - "49153:5050"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      server:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - internal
+volumes:
+  prompts_data:
+
+networks:
+  internal:
+    driver: bridge
