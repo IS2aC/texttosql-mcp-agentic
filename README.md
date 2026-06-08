@@ -1,0 +1,1 @@
+# texttosql-mcp-agentic
