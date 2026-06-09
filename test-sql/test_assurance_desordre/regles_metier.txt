@@ -1,0 +1,119 @@
+=============================================================
+  DOCUMENTATION MÉTIER — BASE test_assurance_desordre
+  Système de gestion d'assurance (Côte d'Ivoire)
+  À fournir à l'assistant analytics au moment de la connexion
+=============================================================
+
+## CORRESPONDANCE DES NOMS DE TABLES
+
+Cette base de données utilise des noms de tables non explicites.
+Voici le mapping officiel :
+
+  table_a             => Agences (points de vente / succursales)
+  clients_v2          => Assurés (personnes souscrivant des contrats)
+  produits_assurance  => Produits / Garanties proposés
+  contrats            => Contrats d'assurance souscrits
+  sinistres_tbl       => Sinistres déclarés par les assurés
+  data_paiements      => Paiements de primes effectués
+  tbl_experts         => Experts mandatés pour évaluer les sinistres
+  audit_log           => Journal des modifications de la base
+
+
+## CORRESPONDANCE DES COLONNES CLÉS
+
+table_a (Agences) :
+  id_agence       = identifiant unique de l'agence
+  NOM_AGENCE      = nom commercial de l'agence
+  Code_Region     = code région sur 3 lettres (ABJ=Abidjan, BKE=Bouaké, SPN=San-Pédro, ABG=Abengourou)
+  actif           = 1 si agence ouverte, 0 si fermée (SMALLINT, pas un booléen)
+
+clients_v2 (Assurés) :
+  CLIENT_ID       = identifiant unique de l'assuré
+  Sexe            = sexe de l'assuré — ATTENTION : valeurs non normalisées ('M','m','F','f')
+  id_agence_fk    = agence de rattachement (FK vers table_a.id_agence)
+  statut_client   = statut de l'assuré — valeurs possibles : 'actif','ACTIF','inactif' (même sens, casse variable)
+
+produits_assurance (Produits) :
+  prod_id         = identifiant unique du produit
+  TYPE_PRODUIT    = famille du produit — valeurs non normalisées : 'Auto','auto','AUTO','Habitation','Vie','SANTE'
+  prime_mensuelle = prime exprimée en FCFA (Francs CFA)
+  prime_annuelle  = prime annuelle en FCFA — précision NUMERIC(10,4) différente de prime_mensuelle NUMERIC(10,2)
+  actif           = 'O' si produit commercialisé, 'N' si arrêté (CHAR, pas un booléen)
+  code_produit    = code interne unique du produit
+
+contrats (Contrats) :
+  NumContrat      = identifiant du contrat, format 'CTR-AAAA-NNNN' (VARCHAR, clé primaire)
+  client_id       = FK vers clients_v2.CLIENT_ID
+  PROD_ID         = FK vers produits_assurance.prod_id
+  statut          = état du contrat — valeurs : 'actif','ACTIF','résilié','suspendu' (casse incohérente)
+  date_fin        = NULL si contrat sans échéance fixe (ex : assurance vie)
+  montant_prime   = prime mensuelle appliquée au contrat (redondant avec produits_assurance)
+
+sinistres_tbl (Sinistres) :
+  SIN_ID          = identifiant du sinistre
+  num_contrat     = FK vers contrats.NumContrat
+  statut_sin      = état du sinistre — valeurs : 'ouvert','Clôturé','OUVERT' (casse incohérente, même sens)
+  montant_rembourse = montant effectivement remboursé — NUMERIC(12,4), différent de montant_estime NUMERIC(12,2)
+  expert_id       = référence vers tbl_experts.expertID — ATTENTION : pas de contrainte FK définie en base
+  date_cloture    = NULL si sinistre toujours ouvert
+
+data_paiements (Paiements) :
+  paiement_id     = identifiant du paiement (BIGSERIAL)
+  NumContrat      = FK vers contrats.NumContrat
+  DATE_PAIEMENT   = date et heure du paiement (TIMESTAMP)
+  mode_paiement   = moyen de paiement — valeurs non normalisées : 'CB','cb','Carte','virement','VIREMENT'
+  statut_paie     = état du paiement en 1 caractère :
+                      'V' = Validé (paiement confirmé)
+                      'P' = Pending (en attente de confirmation)
+                      'R' = Rejeté (paiement refusé / échec)
+
+tbl_experts (Experts) :
+  expertID        = identifiant de l'expert (camelCase)
+  specialite      = domaine d'expertise — valeurs non normalisées : 'Auto','auto','Habitation'
+  zone_geo        = code région de l'expert (même domaine que Code_Region dans table_a, jamais jointuré officiellement)
+  disponible      = seul vrai BOOLEAN de la base (TRUE/FALSE)
+
+
+## RÈGLES MÉTIER IMPORTANTES
+
+1. Monnaie : toutes les primes et montants sont en FCFA (Francs CFA).
+   Pas de symbole en base — toujours préciser "FCFA" dans les réponses.
+
+2. Normalisation des statuts : pour comparer des statuts, toujours utiliser UPPER() ou LOWER().
+   Exemple : WHERE UPPER(statut) = 'ACTIF'
+
+3. Normalisation du sexe : utiliser UPPER(Sexe) = 'M' ou 'F'.
+
+4. Normalisation des types produits : utiliser UPPER(TYPE_PRODUIT) pour regrouper.
+   Exemple : WHERE UPPER(TYPE_PRODUIT) = 'AUTO'
+
+5. Jointure experts/sinistres : sinistres_tbl.expert_id référence tbl_experts.expertID
+   mais sans contrainte FK — la jointure peut retourner des experts inexistants (NULL possible).
+
+6. Contrats actifs : un contrat est actif si UPPER(statut) = 'ACTIF' ET (date_fin IS NULL OR date_fin > CURRENT_DATE).
+
+7. Agences actives : WHERE actif = 1 (SMALLINT).
+
+8. Produits commercialisés : WHERE actif = 'O' (CHAR, pas TRUE).
+
+9. Sinistres ouverts : WHERE UPPER(statut_sin) = 'OUVERT'.
+
+10. La colonne old_data / new_data dans audit_log est du JSON stocké en TEXT.
+    Pour parser : CAST(old_data AS TEXT) — pas de support JSONB natif sur ces colonnes.
+
+
+## QUESTIONS TYPES ATTENDUES
+
+- "Combien de sinistres ouverts par agence ?"
+  → Jointure : sinistres_tbl → contrats → table_a, filtre UPPER(statut_sin)='OUVERT'
+
+- "Quel est le chiffre d'affaires mensuel en primes ?"
+  → Utiliser data_paiements WHERE statut_paie = 'V', grouper par mois sur DATE_PAIEMENT
+
+- "Quels sont les contrats actifs par produit ?"
+  → Jointure contrats → produits_assurance, filtre UPPER(statut)='ACTIF'
+
+- "Taux de sinistralité par type de produit"
+  → Ratio COUNT(sinistres) / COUNT(contrats actifs) par UPPER(TYPE_PRODUIT)
+
+=============================================================

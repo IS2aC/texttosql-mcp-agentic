@@ -67,7 +67,7 @@
     .hero h1 span { background: linear-gradient(90deg, var(--blue-glow), var(--accent)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
     .hero p { color: rgba(255,255,255,.45); font-size: 13.5px; line-height: 1.75; max-width: 320px; }
 
-        /* Steps */
+    /* Steps */
     .steps { display: flex; flex-direction: column; gap: 0; }
     .step {
       display: flex; gap: 16px; align-items: flex-start;
@@ -109,7 +109,6 @@
     .step.s-todo   .step-body span   { color: rgba(255,255,255,.18); }
     .step.s-done   .step-body strong { color: rgba(255,255,255,.8); }
     .step.s-done   .step-body span   { color: var(--accent); }
-
 
     .left-footer { color: rgba(255,255,255,.2); font-size: 11px; position: relative; z-index: 2; font-family: 'DM Mono', monospace; }
 
@@ -155,6 +154,7 @@
     .dot-csv  { background: #888; }
     .dot-demo { background: #9333ea; }
     .dot-supa { background: #3ecf8e; }
+
     /* Form grid */
     .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
     .form-grid .full { grid-column: 1 / -1; }
@@ -188,7 +188,7 @@
     .suffix-btn:hover { color: var(--blue-main); }
     .field-hint { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
 
-    /* File upload zone */
+    /* File upload zone (Excel/CSV) */
     .upload-zone {
       grid-column: 1 / -1;
       border: 2px dashed var(--border); border-radius: 14px;
@@ -215,6 +215,81 @@
     .demo-info h4 { font-size: 13.5px; font-weight: 700; color: #6d28d9; margin-bottom: 4px; }
     .demo-info p { font-size: 12.5px; color: #7c3aed; line-height: 1.6; }
 
+    /* ── Context file upload ── */
+    .context-sep {
+      grid-column: 1 / -1; display: flex; align-items: center; gap: 12px;
+      font-size: 10.5px; font-weight: 700; letter-spacing: 1.2px;
+      color: var(--blue-main); margin: 8px 0 2px;
+      font-family: 'DM Mono', monospace;
+    }
+    .context-sep::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+    .context-sep-label { text-transform: uppercase; }
+    .context-sep-opt {
+      font-size: 10px; font-weight: 500; color: var(--text-muted);
+      text-transform: none; letter-spacing: 0;
+      background: var(--bg-card); border: 1px solid var(--border);
+      border-radius: 20px; padding: 2px 9px;
+    }
+
+    .context-upload {
+      grid-column: 1 / -1;
+      border: 1.5px dashed var(--border); border-radius: 12px;
+      background: var(--bg-card); padding: 14px 18px;
+      display: flex; align-items: center; gap: 14px;
+      cursor: pointer; transition: all .2s;
+      position: relative; overflow: hidden;
+    }
+    .context-upload::before {
+      content: ''; position: absolute; inset: 0;
+      background: linear-gradient(90deg, transparent, rgba(26,122,184,.03), transparent);
+      transform: translateX(-100%); transition: transform .4s ease;
+    }
+    .context-upload:hover { border-color: var(--blue-main); background: var(--blue-pale); }
+    .context-upload:hover::before { transform: translateX(100%); }
+    .context-upload.has-file { border-color: var(--success); background: #f0fafb; border-style: solid; }
+    .context-upload input { display: none; }
+
+    .context-upload-icon {
+      width: 38px; height: 38px; border-radius: 10px; flex-shrink: 0;
+      background: var(--blue-light); border: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px; transition: all .2s;
+    }
+    .context-upload.has-file .context-upload-icon {
+      background: #e0f7f0; border-color: #a7e8d5;
+    }
+
+    .context-upload-body { flex: 1; min-width: 0; }
+    .context-upload-body strong {
+      font-size: 13px; font-weight: 600; color: var(--text-dark);
+      display: block; margin-bottom: 2px;
+    }
+    .context-upload-body .context-hint {
+      font-size: 11.5px; color: var(--text-muted); line-height: 1.5;
+    }
+    .context-upload-chosen {
+      font-size: 11.5px; color: var(--success);
+      font-family: 'DM Mono', monospace;
+      margin-top: 3px; display: none;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+
+    .context-upload-btn {
+      padding: 8px 16px; border-radius: 8px; flex-shrink: 0;
+      border: 1.5px solid var(--border); background: var(--white);
+      font-size: 12px; font-weight: 600; color: var(--text-mid);
+      font-family: 'Sora', sans-serif; cursor: pointer;
+      transition: all .2s; white-space: nowrap;
+    }
+    .context-upload:hover .context-upload-btn {
+      border-color: var(--blue-main); color: var(--blue-main);
+      background: var(--blue-light);
+    }
+    .context-upload.has-file .context-upload-btn {
+      border-color: var(--success); color: var(--success);
+      background: #e0f7f0;
+    }
+
     /* Submit */
     .btn-submit {
       grid-column: 1 / -1; width: 100%; padding: 15px;
@@ -225,6 +300,7 @@
       font-family: 'Sora', sans-serif;
       transition: opacity .2s, transform .15s, box-shadow .2s;
       box-shadow: 0 6px 28px rgba(13,31,53,.2);
+      margin-top: 8px;
     }
     .btn-submit:hover { box-shadow: 0 10px 36px rgba(26,122,184,.4); transform: translateY(-2px); }
     .btn-submit:disabled { opacity: .5; cursor: not-allowed; transform: none; }
@@ -304,7 +380,6 @@
     {% endif %}
 
     <!-- DB Type selector -->
-    <!-- DB Type selector — REMPLACER le bloc db-selector -->
     <div class="db-selector">
       <button type="button" class="db-btn {% if db_type == 'postgresql' %}active{% endif %}" onclick="selectDb('postgresql')">
         <span class="dot dot-pg"></span> PostgreSQL
@@ -323,13 +398,13 @@
       </button>
     </div>
 
-    <!-- FORM → POST vers /register -->
+    <!-- FORM -->
     <form method="POST" action="/register" enctype="multipart/form-data">
       <input type="hidden" name="db_type" id="db_type" value="{{ db_type or 'postgresql' }}"/>
 
       <div class="form-grid">
 
-        <!-- Champs SQL (postgres / mysql) -->
+        <!-- Champs SQL -->
         <div class="form-sep db-fields sql-fields">Connexion</div>
 
         <div class="field db-fields sql-fields">
@@ -398,6 +473,26 @@
           </div>
         </div>
 
+        <!-- ── Contexte métier (optionnel) ── -->
+        <div class="context-sep">
+          <span class="context-sep-label">Contexte métier</span>
+          <span class="context-sep-opt">optionnel</span>
+        </div>
+
+        <div class="context-upload full" id="context-upload-zone"
+             onclick="document.getElementById('context-file-input').click()">
+          <input type="file" id="context-file-input" name="context_file" accept=".txt"
+                 onchange="onContextFileChosen(this)"/>
+          <div class="context-upload-icon" id="context-icon">📄</div>
+          <div class="context-upload-body">
+            <strong>Ajouter un contexte métier</strong>
+            <span class="context-hint">Fichier .txt décrivant vos tables, règles métier, glossaire, KPIs…<br/>Permet à l'assistant de mieux comprendre votre domaine.</span>
+            <div class="context-upload-chosen" id="context-file-chosen"></div>
+          </div>
+          <div class="context-upload-btn" id="context-btn">Parcourir</div>
+        </div>
+        <!-- ── Fin contexte métier ── -->
+
         <button type="submit" class="btn-submit" id="btn-submit">
           🔗&nbsp; Se connecter
         </button>
@@ -418,14 +513,12 @@
   if (presel) selectDb(presel);
 
   function selectDb(type) {
-  // Boutons
     document.querySelectorAll('.db-btn').forEach(b => b.classList.remove('active'));
     document.querySelectorAll('.db-btn').forEach(b => {
       const t = b.textContent.trim().toLowerCase();
       if (
         t.includes(type) ||
-        (type === 'excel' && t.includes('excel')) ||
-        (type === 'csv'   && t.includes('excel')) // csv pointe sur le même bouton Excel/CSV
+        (type === 'csv' && t.includes('excel'))
       ) b.classList.add('active');
     });
 
@@ -456,7 +549,7 @@
       demo:       '🎮&nbsp; Lancer la démo',
     };
     document.getElementById('btn-submit').innerHTML = labels[type] || '🔗&nbsp; Se connecter';
-    }
+  }
 
   function togglePw() {
     const i = document.getElementById('password');
@@ -469,6 +562,21 @@
       label.textContent = '✅ ' + input.files[0].name;
       label.style.display = 'block';
     }
+  }
+
+  function onContextFileChosen(input) {
+    if (!input.files.length) return;
+    const file  = input.files[0];
+    const zone  = document.getElementById('context-upload-zone');
+    const label = document.getElementById('context-file-chosen');
+    const btn   = document.getElementById('context-btn');
+    const icon  = document.getElementById('context-icon');
+
+    label.textContent = '✅ ' + file.name;
+    label.style.display = 'block';
+    zone.classList.add('has-file');
+    btn.textContent  = 'Changer';
+    icon.textContent = '✅';
   }
 
   // Init avec valeur par défaut

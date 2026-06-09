@@ -1,8 +1,12 @@
 # texttosql-mcp-agentic
+## Home Page
 
 
+## Architecture Fonctionnel
 
-## SCHEMA FILES
+![img](diagfonctionnel.png)
+
+## Architecture du code 
 <pre>
 mcp-agentic-analytics/
 │
