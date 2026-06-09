@@ -37,31 +37,23 @@
       font-size: 14.5px;
       color: var(--text-primary);
       background: var(--surface);
-      display: flex;
-      flex-direction: column;
-      height: 100vh;
-      overflow: hidden;
+      display: flex; flex-direction: column;
+      height: 100vh; overflow: hidden;
     }
 
     /* ── Header ── */
     header {
       background: var(--white);
       border-bottom: 1.5px solid var(--border);
-      padding: 0 28px;
-      height: 60px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      flex-shrink: 0;
-      box-shadow: var(--shadow-sm);
-      z-index: 10;
+      padding: 0 28px; height: 60px;
+      display: flex; align-items: center; justify-content: space-between;
+      flex-shrink: 0; box-shadow: var(--shadow-sm); z-index: 10;
     }
     .header-brand { display: flex; align-items: center; gap: 12px; }
     .header-logo {
       width: 34px; height: 34px;
       background: linear-gradient(135deg, var(--sky-500), var(--sky-700));
-      border-radius: 9px;
-      display: flex; align-items: center; justify-content: center;
+      border-radius: 9px; display: flex; align-items: center; justify-content: center;
     }
     .header-logo svg { width: 18px; height: 18px; fill: none; stroke: white; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
     .header-title { font-size: 15px; font-weight: 600; color: var(--navy); letter-spacing: -.2px; }
@@ -106,15 +98,13 @@
       width: 240px; flex-shrink: 0;
       background: var(--white); border-right: 1.5px solid var(--border);
       padding: 20px 16px;
-      display: flex; flex-direction: column; gap: 24px;
-      overflow-y: auto;
+      display: flex; flex-direction: column; gap: 24px; overflow-y: auto;
     }
     .sidebar-section-title {
       font-size: 10.5px; font-weight: 600; text-transform: uppercase;
       letter-spacing: .8px; color: var(--text-muted); margin-bottom: 8px;
     }
     .schema-loading { font-size: 12px; color: var(--text-muted); font-family: 'DM Mono', monospace; padding: 8px 0; }
-
     .schema-table { background: var(--surface); border: 1px solid var(--border-light); border-radius: var(--radius-sm); overflow: hidden; margin-bottom: 8px; }
     .schema-table-header { display: flex; align-items: center; gap: 8px; padding: 9px 12px; background: var(--sky-100); border-bottom: 1px solid var(--border); }
     .schema-table-name { font-size: 12px; font-weight: 600; color: var(--sky-700); font-family: 'DM Mono', monospace; }
@@ -165,63 +155,15 @@
     .bubble-user { background: linear-gradient(135deg, var(--sky-500), var(--sky-600)); color: white; border-bottom-right-radius: 4px; box-shadow: var(--shadow-sm); }
     .bubble-ai   { background: var(--white); color: var(--text-primary); border: 1.5px solid var(--border-light); border-bottom-left-radius: 4px; box-shadow: var(--shadow-sm); }
 
-    /* ── Table Markdown rendu ── */
-    .table-wrapper {
-      overflow-x: auto;
-      margin: 12px 0 4px;
-      border-radius: 10px;
-      border: 1px solid var(--border);
-      box-shadow: var(--shadow-sm);
-    }
+    .table-wrapper { overflow-x: auto; margin: 12px 0 4px; border-radius: 10px; border: 1px solid var(--border); box-shadow: var(--shadow-sm); }
+    .result-table { width: 100%; border-collapse: collapse; font-family: 'DM Mono', monospace; font-size: 12px; min-width: 320px; }
+    .result-table thead tr { background: var(--sky-100); }
+    .result-table th { padding: 9px 16px; text-align: left; font-weight: 600; color: var(--sky-700); white-space: nowrap; border-bottom: 1.5px solid var(--sky-200); letter-spacing: .2px; }
+    .result-table td { padding: 8px 16px; color: var(--text-secondary); border-bottom: 1px solid var(--border-light); white-space: nowrap; }
+    .result-table tbody tr:last-child td { border-bottom: none; }
+    .result-table tbody tr:hover td { background: var(--sky-100); color: var(--text-primary); }
+    .table-meta { font-size: 10.5px; color: var(--text-muted); margin-top: 5px; padding-left: 2px; font-family: 'DM Mono', monospace; }
 
-    .result-table {
-      width: 100%;
-      border-collapse: collapse;
-      font-family: 'DM Mono', monospace;
-      font-size: 12px;
-      min-width: 320px;
-    }
-
-    .result-table thead tr {
-      background: var(--sky-100);
-    }
-
-    .result-table th {
-      padding: 9px 16px;
-      text-align: left;
-      font-weight: 600;
-      color: var(--sky-700);
-      white-space: nowrap;
-      border-bottom: 1.5px solid var(--sky-200);
-      letter-spacing: .2px;
-    }
-
-    .result-table td {
-      padding: 8px 16px;
-      color: var(--text-secondary);
-      border-bottom: 1px solid var(--border-light);
-      white-space: nowrap;
-    }
-
-    .result-table tbody tr:last-child td {
-      border-bottom: none;
-    }
-
-    .result-table tbody tr:hover td {
-      background: var(--sky-100);
-      color: var(--text-primary);
-    }
-
-    /* Compteur de lignes */
-    .table-meta {
-      font-size: 10.5px;
-      color: var(--text-muted);
-      margin-top: 5px;
-      padding-left: 2px;
-      font-family: 'DM Mono', monospace;
-    }
-
-    /* ── SQL block ── */
     .sql-block { margin-top: 10px; background: #f0f7ff; border: 1px solid var(--sky-200); border-radius: var(--radius-sm); overflow: hidden; }
     .sql-block-header { display: flex; align-items: center; gap: 6px; padding: 6px 12px; background: var(--sky-100); border-bottom: 1px solid var(--sky-200); }
     .sql-block-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .8px; color: var(--sky-700); }
@@ -233,7 +175,6 @@
     .msg-meta { font-size: 10.5px; color: var(--text-muted); display: flex; align-items: center; gap: 8px; padding: 0 4px; }
     .meta-pill { padding: 2px 7px; background: var(--sky-100); border-radius: 10px; font-size: 10px; font-weight: 500; color: var(--sky-700); }
 
-    /* ── Typing ── */
     .typing-indicator { display: none; flex-direction: row; gap: 12px; }
     .typing-indicator.visible { display: flex; }
     .typing-dots { background: var(--white); border: 1.5px solid var(--border-light); border-radius: var(--radius); border-bottom-left-radius: 4px; padding: 14px 18px; display: flex; align-items: center; gap: 5px; box-shadow: var(--shadow-sm); }
@@ -242,7 +183,6 @@
     .typing-dots span:nth-child(3) { animation-delay: .3s; }
     @keyframes bounce-dot { 0%,80%,100%{transform:translateY(0);opacity:.6} 40%{transform:translateY(-5px);opacity:1} }
 
-    /* ── Input ── */
     .input-area { padding: 16px 32px 20px; background: var(--white); border-top: 1.5px solid var(--border); flex-shrink: 0; }
     .input-row { display: flex; align-items: flex-end; gap: 10px; background: var(--surface); border: 1.5px solid var(--border); border-radius: 14px; padding: 10px 12px; transition: border-color .2s, box-shadow .2s; }
     .input-row:focus-within { border-color: var(--sky-400); box-shadow: 0 0 0 3px rgba(46,147,209,.10); }
@@ -254,11 +194,80 @@
     .send-btn svg { width: 17px; height: 17px; stroke: white; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
     .input-hint { margin-top: 6px; font-size: 11px; color: var(--text-muted); text-align: right; }
 
-    /* ── Toast ── */
-    .toast { position: fixed; bottom: 90px; right: 28px; padding: 10px 18px; border-radius: var(--radius-sm); font-size: 12.5px; font-weight: 500; animation: toast-in .25s ease; z-index: 100; box-shadow: var(--shadow-md); }
+    .toast { position: fixed; bottom: 90px; right: 28px; padding: 10px 18px; border-radius: var(--radius-sm); font-size: 12.5px; font-weight: 500; animation: toast-in .25s ease; z-index: 300; box-shadow: var(--shadow-md); }
     .toast-success { background: #eafaf3; border: 1px solid #b6e8d1; color: var(--success); }
     .toast-error   { background: #fdf2f2; border: 1px solid #f5b7b1; color: var(--error); }
     @keyframes toast-in { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:none} }
+
+    /* ── Modal refresh ── */
+    .modal-overlay {
+      position: fixed; inset: 0;
+      background: rgba(13,43,69,.45);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 200; opacity: 0; pointer-events: none;
+      transition: opacity .2s ease;
+    }
+    .modal-overlay.open { opacity: 1; pointer-events: all; }
+    .modal-card {
+      background: var(--white); border-radius: 16px;
+      padding: 28px 32px; width: 440px; max-width: 92vw;
+      box-shadow: 0 20px 60px rgba(13,43,69,.18);
+      transform: translateY(12px); transition: transform .2s ease;
+    }
+    .modal-overlay.open .modal-card { transform: translateY(0); }
+    .modal-title { font-size: 16px; font-weight: 700; color: var(--navy); margin-bottom: 6px; }
+    .modal-sub { font-size: 13px; color: var(--text-muted); margin-bottom: 20px; line-height: 1.65; }
+    .modal-info {
+      background: var(--sky-100); border: 1px solid var(--sky-200);
+      border-radius: 8px; padding: 10px 14px;
+      font-size: 12px; color: var(--sky-700); margin-bottom: 18px;
+      display: flex; gap: 8px; align-items: flex-start; line-height: 1.5;
+    }
+    .modal-upload {
+      border: 1.5px dashed var(--border); border-radius: 10px;
+      background: var(--surface); padding: 13px 16px;
+      display: flex; align-items: center; gap: 12px;
+      cursor: pointer; transition: all .2s; margin-bottom: 22px;
+    }
+    .modal-upload:hover { border-color: var(--sky-400); background: var(--sky-100); }
+    .modal-upload.has-file { border-color: var(--success); background: #eafaf3; border-style: solid; }
+    .modal-upload input { display: none; }
+    .modal-upload-icon { font-size: 20px; flex-shrink: 0; }
+    .modal-upload-body { flex: 1; min-width: 0; }
+    .modal-upload-body strong { font-size: 13px; font-weight: 600; color: var(--text-primary); display: block; margin-bottom: 2px; }
+    .modal-upload-body span { font-size: 11.5px; color: var(--text-muted); }
+    .modal-upload-chosen { font-size: 11px; color: var(--success); font-family: 'DM Mono', monospace; margin-top: 3px; display: none; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .modal-upload-btn {
+      padding: 6px 14px; border-radius: 7px; flex-shrink: 0;
+      border: 1.5px solid var(--border); background: var(--white);
+      font-size: 12px; font-weight: 600; color: var(--text-secondary);
+      font-family: inherit; cursor: pointer; transition: all .2s;
+    }
+    .modal-upload:hover .modal-upload-btn { border-color: var(--sky-500); color: var(--sky-600); }
+    .modal-actions { display: flex; gap: 10px; justify-content: flex-end; }
+    .btn-modal-cancel {
+      padding: 9px 18px; border-radius: 8px;
+      border: 1.5px solid var(--border); background: var(--white);
+      font-size: 13px; font-weight: 600; color: var(--text-secondary);
+      font-family: inherit; cursor: pointer; transition: all .15s;
+    }
+    .btn-modal-cancel:hover { border-color: var(--sky-400); color: var(--sky-600); }
+    .btn-modal-confirm {
+      padding: 9px 20px; border-radius: 8px;
+      background: linear-gradient(135deg, var(--navy), var(--sky-600));
+      border: none; color: #fff;
+      font-size: 13px; font-weight: 700;
+      font-family: inherit; cursor: pointer; transition: opacity .15s;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .btn-modal-confirm:disabled { opacity: .5; cursor: not-allowed; }
+    .spinner {
+      width: 14px; height: 14px; border-radius: 50%;
+      border: 2px solid rgba(255,255,255,.3);
+      border-top-color: #fff;
+      animation: spin .7s linear infinite; display: none;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
   </style>
 </head>
 <body>
@@ -280,6 +289,17 @@
       <div class="status-dot"></div>
       <span id="status-text">Chargement...</span>
     </div>
+
+    <!-- ✅ Bouton Rafraîchir schéma -->
+    <button class="btn-action" onclick="openRefreshModal()">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
+        <path d="M21 2v6h-6"/>
+        <path d="M3 12a9 9 0 0 1 15-6.7L21 8"/>
+        <path d="M3 22v-6h6"/>
+        <path d="M21 12a9 9 0 0 1-15 6.7L3 16"/>
+      </svg>
+      Rafraîchir
+    </button>
 
     <button class="btn-action" onclick="resetConversation()">
       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
@@ -356,31 +376,57 @@
 
 <div id="toast-container"></div>
 
+<!-- ✅ Modal Refresh -->
+<div class="modal-overlay" id="refresh-modal">
+  <div class="modal-card">
+    <div class="modal-title">🔄 Rafraîchir le schéma</div>
+    <div class="modal-sub">
+      Le schéma sera rechargé depuis la base de données et la base de connaissance régénérée.
+    </div>
+
+    <div class="modal-info">
+      ℹ️ Les nouvelles tables et colonnes seront détectées. Si aucun fichier n'est uploadé, le contexte métier existant sera réutilisé automatiquement. L'historique de la conversation sera réinitialisé.
+    </div>
+
+    <div class="modal-upload" id="modal-upload-zone"
+         onclick="document.getElementById('modal-ctx-input').click()">
+      <input type="file" id="modal-ctx-input" accept=".txt"
+             onchange="onModalCtxChosen(this)"/>
+      <div class="modal-upload-icon" id="modal-ctx-icon">📄</div>
+      <div class="modal-upload-body">
+        <strong>Mettre à jour le contexte métier</strong>
+        <span>Optionnel — laissez vide pour réutiliser l'existant</span>
+        <div class="modal-upload-chosen" id="modal-ctx-chosen"></div>
+      </div>
+      <div class="modal-upload-btn" id="modal-ctx-btn">Parcourir</div>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn-modal-cancel" onclick="closeRefreshModal()">Annuler</button>
+      <button class="btn-modal-confirm" id="btn-confirm-refresh" onclick="confirmRefresh()">
+        <div class="spinner" id="refresh-spinner"></div>
+        <span id="refresh-btn-label">Confirmer le refresh</span>
+      </button>
+    </div>
+  </div>
+</div>
+
 <script>
   const messagesEl = document.getElementById('messages');
   const inputEl    = document.getElementById('user-input');
   const sendBtn    = document.getElementById('send-btn');
   const typingEl   = document.getElementById('typing');
-  const welcomeEl  = document.getElementById('welcome-screen');
 
   let isLoading = false;
 
-  // ── Auto-resize textarea ──────────────────────────────
   function autoResize(el) {
     el.style.height = 'auto';
     el.style.height = Math.min(el.scrollHeight, 160) + 'px';
   }
-
   function handleKey(e) {
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
   }
-
-  function quickSend(text) {
-    inputEl.value = text;
-    autoResize(inputEl);
-    sendMessage();
-  }
-
+  function quickSend(text) { inputEl.value = text; autoResize(inputEl); sendMessage(); }
   function scrollBottom() { messagesEl.scrollTop = messagesEl.scrollHeight; }
 
   function setLoading(state) {
@@ -392,39 +438,23 @@
     scrollBottom();
   }
 
-  // ── Convertit un bloc tableau Markdown en HTML <table> ──
+  function escapeHtml(str) {
+    return String(str)
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
   function markdownTableToHtml(block) {
     const rows = block.trim().split('\n').map(r =>
-      r.split('|')
-       .map(c => c.trim())
-       .filter(c => c !== '')
+      r.split('|').map(c => c.trim()).filter(c => c !== '')
     );
-
-    // Filtrer la ligne séparateur (---, :---:, etc.)
-    const filtered = rows.filter(row =>
-      !row.every(cell => /^[-:| ]+$/.test(cell))
-    );
-
+    const filtered = rows.filter(row => !row.every(cell => /^[-:| ]+$/.test(cell)));
     if (filtered.length === 0) return null;
-
     const [header, ...body] = filtered;
-
-    const thHtml = header
-      .map(h => `<th>${escapeHtml(h)}</th>`)
-      .join('');
-
-    const tbodyHtml = body
-      .map(row => {
-        const cells = header.map((_, i) =>
-          `<td>${escapeHtml(row[i] ?? '')}</td>`
-        ).join('');
-        return `<tr>${cells}</tr>`;
-      })
-      .join('');
-
-    const rowCount = body.length;
-    const colCount = header.length;
-
+    const thHtml = header.map(h => `<th>${escapeHtml(h)}</th>`).join('');
+    const tbodyHtml = body.map(row => {
+      const cells = header.map((_, i) => `<td>${escapeHtml(row[i] ?? '')}</td>`).join('');
+      return `<tr>${cells}</tr>`;
+    }).join('');
     return `
       <div class="table-wrapper">
         <table class="result-table">
@@ -432,55 +462,22 @@
           <tbody>${tbodyHtml}</tbody>
         </table>
       </div>
-      <div class="table-meta">${rowCount} ligne${rowCount > 1 ? 's' : ''} · ${colCount} colonne${colCount > 1 ? 's' : ''}</div>`;
+      <div class="table-meta">${body.length} ligne${body.length > 1 ? 's' : ''} · ${header.length} colonne${header.length > 1 ? 's' : ''}</div>`;
   }
 
-  function escapeHtml(str) {
-    return String(str)
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;');
-  }
-
-  // ── Formatte le texte : tableaux + bold + sauts de ligne ──
   function formatAnswer(raw) {
-    // Découpe le texte en segments : blocs tableau vs texte normal
     const parts = [];
     const lines = raw.split('\n');
-    let tableLines = [];
-    let textLines  = [];
-
-    const flushText = () => {
-      if (textLines.length) {
-        parts.push({ type: 'text', content: textLines.join('\n') });
-        textLines = [];
-      }
-    };
-    const flushTable = () => {
-      if (tableLines.length) {
-        parts.push({ type: 'table', content: tableLines.join('\n') });
-        tableLines = [];
-      }
-    };
-
+    let tableLines = [], textLines = [];
+    const flushText  = () => { if (textLines.length)  { parts.push({ type:'text',  content:textLines.join('\n')  }); textLines  = []; } };
+    const flushTable = () => { if (tableLines.length) { parts.push({ type:'table', content:tableLines.join('\n') }); tableLines = []; } };
     for (const line of lines) {
-      if (line.trim().startsWith('|')) {
-        flushText();
-        tableLines.push(line);
-      } else {
-        flushTable();
-        textLines.push(line);
-      }
+      if (line.trim().startsWith('|')) { flushText();  tableLines.push(line); }
+      else                             { flushTable(); textLines.push(line);  }
     }
-    flushText();
-    flushTable();
-
-    // Rendre chaque segment
+    flushText(); flushTable();
     return parts.map(part => {
-      if (part.type === 'table') {
-        return markdownTableToHtml(part.content) || escapeHtml(part.content);
-      }
-      // Texte : escape → bold → sauts de ligne
+      if (part.type === 'table') return markdownTableToHtml(part.content) || escapeHtml(part.content);
       let html = escapeHtml(part.content);
       html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
       html = html.replace(/\n/g, '<br>');
@@ -488,8 +485,8 @@
     }).join('');
   }
 
-  // ── Append message ────────────────────────────────────
   function appendMessage({ role, text, sql, tools, elapsed }) {
+    const welcomeEl = document.getElementById('welcome-screen');
     if (welcomeEl) welcomeEl.style.display = 'none';
 
     const wrap = document.createElement('div');
@@ -520,11 +517,9 @@
             <pre class="sql-code">${esc}</pre>
           </div>`;
       }
-
       const toolPills = (tools || []).map(t => `<span class="meta-pill">${t}</span>`).join('');
       const metaHtml  = elapsed !== undefined
         ? `<div class="msg-meta"><span>${elapsed}s</span>${toolPills}</div>` : '';
-
       wrap.innerHTML = `
         <div class="avatar avatar-ai">
           <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg>
@@ -534,12 +529,10 @@
           ${metaHtml}
         </div>`;
     }
-
     messagesEl.appendChild(wrap);
     scrollBottom();
   }
 
-  // ── Copy SQL ──────────────────────────────────────────
   async function copySql(btn, sql) {
     try {
       await navigator.clipboard.writeText(sql);
@@ -550,46 +543,33 @@
     } catch { showToast('Impossible de copier', 'error'); }
   }
 
-  // ── Toast ─────────────────────────────────────────────
   function showToast(msg, type = 'success') {
     const t = document.createElement('div');
     t.className = `toast toast-${type}`;
     t.textContent = msg;
     document.getElementById('toast-container').appendChild(t);
-    setTimeout(() => t.remove(), 3000);
+    setTimeout(() => t.remove(), 3500);
   }
 
-  // ── Send message ──────────────────────────────────────
   async function sendMessage() {
     if (isLoading) return;
     const text = inputEl.value.trim();
     if (!text) return;
-
     inputEl.value = '';
     inputEl.style.height = 'auto';
     appendMessage({ role: 'user', text });
     setLoading(true);
-
     try {
       const res = await fetch('/chat/message', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ message: text }),
       });
-
       if (res.status === 401) { window.location.href = '/register'; return; }
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
-
       const data = await res.json();
       setLoading(false);
-      appendMessage({
-        role: 'assistant',
-        text: data.answer,
-        sql: data.sql_used,
-        tools: data.tools_called,
-        elapsed: data.elapsed_s
-      });
-
+      appendMessage({ role:'assistant', text:data.answer, sql:data.sql_used, tools:data.tools_called, elapsed:data.elapsed_s });
     } catch (err) {
       setLoading(false);
       appendMessage({ role: 'assistant', text: `Erreur : ${err.message}` });
@@ -597,16 +577,12 @@
     }
   }
 
-  // ── Reset ─────────────────────────────────────────────
   async function resetConversation() {
     if (isLoading) return;
     await fetch('/chat/reset', { method: 'POST' });
-
     [...messagesEl.children].forEach(el => { if (el.id !== 'typing') el.remove(); });
-
     const welcome = document.createElement('div');
-    welcome.className = 'welcome';
-    welcome.id = 'welcome-screen';
+    welcome.className = 'welcome'; welcome.id = 'welcome-screen';
     welcome.innerHTML = `
       <div class="welcome-icon">
         <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
@@ -617,24 +593,20 @@
     showToast('Session réinitialisée');
   }
 
-  // ── Disconnect ────────────────────────────────────────
   async function disconnect() {
     await fetch('/chat/disconnect', { method: 'POST' });
     window.location.href = '/';
   }
 
-  // ── Load schema ───────────────────────────────────────
   async function loadSchema() {
     try {
       const res  = await fetch('/chat/schema');
       const data = await res.json();
       const container = document.getElementById('schema-container');
-
       if (!data.tables || data.tables.length === 0) {
         container.innerHTML = '<div class="schema-loading">Aucune table trouvée</div>';
         return;
       }
-
       container.innerHTML = data.tables.map(table => `
         <div class="schema-table">
           <div class="schema-table-header">
@@ -655,14 +627,12 @@
               </span>`).join('')}
           </div>
         </div>`).join('');
-
     } catch {
       document.getElementById('schema-container').innerHTML =
         '<div class="schema-loading">Erreur de chargement</div>';
     }
   }
 
-  // ── Health check ──────────────────────────────────────
   async function checkHealth() {
     try {
       const res  = await fetch('/health');
@@ -677,6 +647,92 @@
       document.getElementById('status-text').textContent = 'Déconnecté';
     }
   }
+
+  // ── Modal Refresh ─────────────────────────────────────
+  let _refreshCtxFile = null;
+
+  function openRefreshModal() {
+    document.getElementById('refresh-modal').classList.add('open');
+  }
+
+  function closeRefreshModal() {
+    document.getElementById('refresh-modal').classList.remove('open');
+    _resetModalUpload();
+  }
+
+  function _resetModalUpload() {
+    _refreshCtxFile = null;
+    document.getElementById('modal-ctx-input').value = '';
+    document.getElementById('modal-ctx-chosen').style.display = 'none';
+    document.getElementById('modal-ctx-chosen').textContent = '';
+    document.getElementById('modal-upload-zone').classList.remove('has-file');
+    document.getElementById('modal-ctx-icon').textContent = '📄';
+    document.getElementById('modal-ctx-btn').textContent = 'Parcourir';
+  }
+
+  function onModalCtxChosen(input) {
+    if (!input.files.length) return;
+    _refreshCtxFile = input.files[0];
+    document.getElementById('modal-ctx-chosen').textContent = '✅ ' + _refreshCtxFile.name;
+    document.getElementById('modal-ctx-chosen').style.display = 'block';
+    document.getElementById('modal-upload-zone').classList.add('has-file');
+    document.getElementById('modal-ctx-icon').textContent = '✅';
+    document.getElementById('modal-ctx-btn').textContent = 'Changer';
+  }
+
+  async function confirmRefresh() {
+    const btn     = document.getElementById('btn-confirm-refresh');
+    const spinner = document.getElementById('refresh-spinner');
+    const label   = document.getElementById('refresh-btn-label');
+
+    btn.disabled          = true;
+    spinner.style.display = 'block';
+    label.textContent     = 'Rafraîchissement…';
+
+    try {
+      const formData = new FormData();
+      if (_refreshCtxFile) formData.append('context_file', _refreshCtxFile);
+
+      const res = await fetch('/chat/refresh', { method: 'POST', body: formData });
+
+      if (res.status === 401) { window.location.href = '/register'; return; }
+
+      const data = await res.json();
+
+      if (!res.ok || data.error) {
+        showToast(data.error || 'Erreur lors du refresh', 'error');
+      } else {
+        closeRefreshModal();
+        showToast(data.message, 'success');
+        loadSchema();
+        _resetWelcome(`🔄 ${data.message}`);
+      }
+    } catch (err) {
+      showToast('Erreur réseau : ' + err.message, 'error');
+    } finally {
+      btn.disabled          = false;
+      spinner.style.display = 'none';
+      label.textContent     = 'Confirmer le refresh';
+    }
+  }
+
+  function _resetWelcome(msg) {
+    [...messagesEl.children].forEach(el => { if (el.id !== 'typing') el.remove(); });
+    const welcome = document.createElement('div');
+    welcome.className = 'welcome'; welcome.id = 'welcome-screen';
+    welcome.innerHTML = `
+      <div class="welcome-icon">
+        <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+      </div>
+      <h2>${msg}</h2>
+      <p>Posez une question en langage naturel sur votre source de données.</p>`;
+    messagesEl.insertBefore(welcome, messagesEl.firstChild);
+  }
+
+  // Fermer la modal en cliquant sur l'overlay
+  document.getElementById('refresh-modal').addEventListener('click', function(e) {
+    if (e.target === this) closeRefreshModal();
+  });
 
   // Init
   checkHealth();

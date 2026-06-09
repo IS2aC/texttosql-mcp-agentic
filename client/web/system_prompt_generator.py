@@ -20,17 +20,42 @@ class SystemPromptGenerator:
         self.sslmode       = sslmode or ("require" if db_type == "supabase" else None)
 
     # ===============================
-    # Path du cache — SHA256 credentials
+    # Paths — SHA256 credentials
     # ===============================
+    def _cache_key(self) -> str:
+        raw = f"{self.host_name}:{self.port}:{self.database_name}:{self.user_name}:{self.password}"
+        return hashlib.sha256(raw.encode()).hexdigest()
+
+    def _base_dir(self) -> str:
+        return os.path.join(os.path.dirname(__file__), "system_prompts")
+
     def generate_prompt_path(self) -> str:
-        """
-        Clé = SHA256(host:port:database:user:password)
-        Stable pour une même DB, indépendant du contexte métier.
-        """
-        base = os.path.join(os.path.dirname(__file__), "system_prompts")
-        raw  = f"{self.host_name}:{self.port}:{self.database_name}:{self.user_name}:{self.password}"
-        key  = hashlib.sha256(raw.encode()).hexdigest()
-        return os.path.join(base, f"{key}.txt")
+        """Chemin du system prompt complet (cache principal)."""
+        return os.path.join(self._base_dir(), f"{self._cache_key()}.txt")
+
+    def _context_path(self) -> str:
+        """Chemin du context_text brut (.ctx) — persisté pour les refresh futurs."""
+        return os.path.join(self._base_dir(), f"{self._cache_key()}.ctx")
+
+    # ===============================
+    # Context text — lecture / écriture
+    # ===============================
+    def save_context_text(self, context_text: str) -> None:
+        """Sauvegarde le context_text brut pour pouvoir le réutiliser au refresh."""
+        if not context_text:
+            return
+        os.makedirs(self._base_dir(), exist_ok=True)
+        with open(self._context_path(), "w", encoding="utf-8") as f:
+            f.write(context_text)
+        print(f"[cache] Context text sauvegardé → {self._context_path()}")
+
+    def load_context_text(self) -> str:
+        """Charge le context_text persisté. Retourne '' si absent."""
+        ctx_path = self._context_path()
+        if not os.path.exists(ctx_path):
+            return ""
+        with open(ctx_path, "r", encoding="utf-8") as f:
+            return f.read()
 
     # ===============================
     # Génération du prompt final
@@ -171,7 +196,7 @@ Call list_tables or columns_of(table_name) before generating SQL.
 """
 
     # ===============================
-    # Récupération du schéma technique
+    # Schéma technique
     # ===============================
     def column_data(self) -> str:
         if self.db_type == "mysql":
@@ -180,7 +205,6 @@ Call list_tables or columns_of(table_name) before generating SQL.
 
     def _column_data_postgresql(self) -> str:
         import psycopg2
-
         column_query = """
             SELECT c.table_schema, c.table_name, c.column_name,
                    c.data_type, c.character_maximum_length,
@@ -207,7 +231,6 @@ Call list_tables or columns_of(table_name) before generating SQL.
                   password=self.password, host=self.host_name, port=self.port)
         if self.sslmode:
             kw["sslmode"] = self.sslmode
-
         with psycopg2.connect(**kw) as conn:
             with conn.cursor() as cur:
                 cur.execute(column_query); columns = cur.fetchall()
@@ -233,10 +256,12 @@ Call list_tables or columns_of(table_name) before generating SQL.
         columns = cursor.fetchall()
         cursor.execute("""
             SELECT kcu.table_schema, kcu.table_name, kcu.column_name,
-                   kcu.referenced_table_schema, kcu.referenced_table_name, kcu.referenced_column_name
+                   kcu.referenced_table_schema, kcu.referenced_table_name,
+                   kcu.referenced_column_name
             FROM information_schema.key_column_usage kcu
             JOIN information_schema.table_constraints tc
-                ON tc.constraint_name = kcu.constraint_name AND tc.table_schema = kcu.table_schema
+                ON tc.constraint_name = kcu.constraint_name
+                AND tc.table_schema = kcu.table_schema
             WHERE tc.constraint_type = 'FOREIGN KEY' AND kcu.table_schema = %s;
         """, (self.database_name,))
         fks = cursor.fetchall()
@@ -274,14 +299,15 @@ Call list_tables or columns_of(table_name) before generating SQL.
             result += "\n"
         return result
 
+    def count_tables(self) -> int:
+        """Retourne le nombre de tables — utile pour le feedback du refresh."""
+        schema_str = self.column_data()
+        return schema_str.count("**public.")
+
     # ===============================
-    # Appel Groq — génération base de connaissance
+    # Appel Groq — base de connaissance
     # ===============================
     def api_call(self, schema_info: str, context_text: str = "") -> str:
-        """
-        Groq reçoit le schéma technique + les règles métier (si fournies)
-        et génère une base de connaissance enrichie pour le system prompt.
-        """
         client_groq = Groq(api_key=os.getenv("GROQ_API"))
 
         user_content = f"Here is the technical schema of the database:\n\n{schema_info}"
@@ -324,53 +350,93 @@ Call list_tables or columns_of(table_name) before generating SQL.
     # Sauvegarde
     # ===============================
     def save_system_prompt(self, prompt: str) -> None:
-        prompt_path = self.generate_prompt_path()
-        os.makedirs(os.path.dirname(prompt_path), exist_ok=True)
-        with open(prompt_path, "w", encoding="utf-8") as f:
+        os.makedirs(self._base_dir(), exist_ok=True)
+        with open(self.generate_prompt_path(), "w", encoding="utf-8") as f:
             f.write(prompt)
-        print(f"Prompt saved → {prompt_path}")
+        print(f"[cache] Prompt sauvegardé → {self.generate_prompt_path()}")
 
     # ===============================
-    # Point d'entrée principal
+    # Point d'entrée — construction
     # ===============================
     def construct_system_prompt(self, context_text: str = "") -> str:
         """
-        Construit ou recharge le system prompt depuis le cache.
-
-        - Sans context_text : charge le cache si existant, sinon génère.
-        - Avec context_text : invalide le cache existant et régénère
-          en passant les règles métier à Groq pour enrichir la base
-          de connaissance → sauvegardé dans le cache.
-
+        Construit ou charge le system prompt.
+        - Si context_text fourni → sauvegarde le .ctx + invalide le cache
+        - Si pas de context_text → réutilise le .ctx existant si présent
         Retourne toujours le chemin du fichier cache.
         """
         prompt_path = self.generate_prompt_path()
 
-        # Invalider le cache si un contexte métier est fourni
+        # Résolution du context_text :
+        # 1. Priorité au context_text passé en paramètre (nouveau upload)
+        # 2. Sinon, réutilise le .ctx persisté (refresh sans nouveau fichier)
+        if context_text:
+            self.save_context_text(context_text)
+        else:
+            context_text = self.load_context_text()
+
+        # Invalider le cache si context_text fourni
         if context_text and os.path.exists(prompt_path):
             os.remove(prompt_path)
-            print(f"[cache] Invalidé (contexte métier fourni) → {prompt_path}")
+            print(f"[cache] Invalidé → {prompt_path}")
 
         if os.path.exists(prompt_path):
             print(f"[cache] Prompt existant chargé → {prompt_path}")
             return prompt_path
 
         # Génération complète
-        print("[cache] Nouveau prompt — récupération du schéma...")
+        print("[cache] Génération du prompt — récupération du schéma...")
         schema_info = self.column_data()
-        print("-" * 60)
-        print(schema_info)
-        print("-" * 60)
 
-        print("[cache] Appel Groq — génération base de connaissance...")
+        print("[cache] Appel Groq...")
         if context_text:
-            print("[cache] Contexte métier transmis à Groq ✓")
+            print("[cache] Context text transmis à Groq ✓")
         data_context = self.api_call(schema_info, context_text)
-        print("-" * 60)
-        print(data_context)
-        print("-" * 60)
 
         prompt = self.generate_prompt(data_context, schema_info)
         self.save_system_prompt(prompt)
 
         return prompt_path
+
+    # ===============================
+    # Refresh — force la régénération
+    # ===============================
+    def refresh(self, new_context_text: str = "") -> tuple[str, int]:
+        """
+        Force la régénération complète du system prompt.
+        - new_context_text : nouveau .txt uploadé (optionnel)
+          Si absent, réutilise le .ctx persisté.
+        Retourne (prompt_path, tables_count).
+        """
+        prompt_path = self.generate_prompt_path()
+
+        # Résolution du context_text
+        if new_context_text:
+            self.save_context_text(new_context_text)
+            context_text = new_context_text
+            print(f"[refresh] Nouveau context text ({len(context_text)} chars) sauvegardé")
+        else:
+            context_text = self.load_context_text()
+            if context_text:
+                print(f"[refresh] Context text existant réutilisé ({len(context_text)} chars)")
+            else:
+                print("[refresh] Pas de context text — régénération schéma seul")
+
+        # Suppression forcée du cache
+        if os.path.exists(prompt_path):
+            os.remove(prompt_path)
+            print(f"[refresh] Cache supprimé → {prompt_path}")
+
+        # Régénération
+        print("[refresh] Récupération du schéma depuis la DB...")
+        schema_info  = self.column_data()
+        tables_count = schema_info.count("**public.")
+
+        print(f"[refresh] {tables_count} tables détectées — appel Groq...")
+        data_context = self.api_call(schema_info, context_text)
+
+        prompt = self.generate_prompt(data_context, schema_info)
+        self.save_system_prompt(prompt)
+
+        print(f"[refresh] Terminé — {tables_count} tables")
+        return prompt_path, tables_count

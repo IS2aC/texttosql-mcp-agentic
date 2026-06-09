@@ -1,5 +1,5 @@
 # client/web/routes/register.py
-import uuid, os, sys, json, hashlib
+import uuid, os, sys, json
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from flask import Blueprint, render_template, request, redirect, url_for, session
@@ -20,9 +20,6 @@ def run_async(coro):
         loop.close()
 
 
-# ──────────────────────────────────────────────
-# Credentials
-# ──────────────────────────────────────────────
 def _build_credentials(db_type: str, form, files) -> dict:
     if db_type in ("postgresql", "mysql"):
         return {
@@ -56,14 +53,7 @@ def _build_credentials(db_type: str, form, files) -> dict:
     raise ValueError(f"Type de base de données inconnu : {db_type}")
 
 
-# ──────────────────────────────────────────────
-# Lecture du fichier contexte métier (.txt)
-# ──────────────────────────────────────────────
 def _read_context_file(files) -> str:
-    """
-    Lit le fichier .txt de contexte métier uploadé.
-    Retourne "" si absent ou illisible.
-    """
     context_file = files.get("context_file")
     if not context_file or not context_file.filename:
         return ""
@@ -79,9 +69,6 @@ def _read_context_file(files) -> str:
         return ""
 
 
-# ──────────────────────────────────────────────
-# Erreur MCP
-# ──────────────────────────────────────────────
 def _parse_mcp_error(raw: str) -> str:
     try:
         parsed = json.loads(raw)
@@ -90,16 +77,7 @@ def _parse_mcp_error(raw: str) -> str:
         return raw
 
 
-# ──────────────────────────────────────────────
-# Chargement du system prompt
-# ──────────────────────────────────────────────
 def _load_system_prompt(db_type: str, credentials: dict, context_text: str = "") -> str:
-    """
-    Délègue entièrement à SystemPromptGenerator.
-    - context_text transmis à Groq → base de connaissance enrichie
-    - Résultat sauvegardé dans le cache (SHA256 credentials)
-    - Rechargé depuis le cache si identique
-    """
     if db_type in ("postgresql", "mysql", "supabase", "demo"):
         gen = SystemPromptGenerator(
             database_name=credentials["database"],
@@ -110,10 +88,7 @@ def _load_system_prompt(db_type: str, credentials: dict, context_text: str = "")
             db_type=db_type,
             sslmode=credentials.get("sslmode"),
         )
-        # context_text transmis → Groq génère une base de connaissance enrichie
-        # sauvegardée dans le cache
         prompt_path = gen.construct_system_prompt(context_text=context_text)
-
         with open(prompt_path, "r", encoding="utf-8") as f:
             return f.read()
 
@@ -122,9 +97,6 @@ def _load_system_prompt(db_type: str, credentials: dict, context_text: str = "")
         return f.read()
 
 
-# ──────────────────────────────────────────────
-# Rendu erreur
-# ──────────────────────────────────────────────
 def _render_error(error_msg: str, db_type: str = None):
     return render_template(
         "register.html",
@@ -134,9 +106,6 @@ def _render_error(error_msg: str, db_type: str = None):
     )
 
 
-# ──────────────────────────────────────────────
-# Route principale
-# ──────────────────────────────────────────────
 @register_bp.route("/register", methods=["GET", "POST"])
 def register():
     if request.method == "GET":
@@ -166,14 +135,14 @@ def register():
         }))
     except Exception as e:
         logger.error(f"Erreur MCP inattendue : {e}")
-        return _render_error("Impossible de joindre le serveur MCP. Vérifiez qu'il est démarré.", db_type)
+        return _render_error("Impossible de joindre le serveur MCP.", db_type)
 
     if "error" in init_result.lower():
         clean_error = _parse_mcp_error(init_result)
         logger.warning(f"Connexion refusée ({db_type}): {clean_error}")
         return _render_error(f"Connexion échouée : {clean_error}", db_type)
 
-    # 4. System prompt — Groq génère la base de connaissance (schéma + contexte métier)
+    # 4. System prompt
     try:
         system_prompt = _load_system_prompt(db_type, credentials, context_text)
     except Exception as e:
@@ -187,11 +156,12 @@ def register():
         logger.error(f"Erreur chargement outils MCP : {e}")
         return _render_error("Impossible de charger les outils analytiques.", db_type)
 
-    # 6. Session utilisateur
+    # 6. Session — on stocke les credentials pour permettre le refresh
     user_session_id = str(uuid.uuid4())
     session_store.create(user_session_id, {
         "mcp_session_id": mcp_session_id,
         "db_type":        db_type,
+        "credentials":    credentials,   # ← nécessaire pour /chat/refresh
         "messages":       [{"role": "system", "content": system_prompt}],
         "tools":          tools,
     })

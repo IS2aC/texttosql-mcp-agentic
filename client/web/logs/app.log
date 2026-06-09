@@ -1,2 +1,28 @@
 2026-06-09 14:16:26.410 | INFO     | routes.register:_read_context_file:72 - Contexte métier chargé (5769 caractères) depuis 'regles_metier.txt'
 2026-06-09 14:16:32.949 | INFO     | routes.register:register:200 - Session créée (postgresql) → c918c9ad…
+2026-06-09 18:07:18.123 | INFO     | routes.register:register:170 - Session créée (postgresql) → e03ac5f6…
+2026-06-09 18:07:25.993 | INFO     | routes.chat:chat_schema:79 - [schema] 8 tables parsées pour postgresql
+2026-06-09 18:07:41.008 | INFO     | routes.chat:chat_refresh:149 - [e03ac5f6] Refresh OK — 8 tables
+2026-06-09 18:07:48.385 | INFO     | routes.chat:chat_schema:79 - [schema] 8 tables parsées pour postgresql
+2026-06-09 18:07:57.718 | INFO     | routes.chat:chat_message:45 - [e03ac5f6] USER >> Liste les tables disponibles
+2026-06-09 18:08:00.299 | INFO     | core.agent:run_agent:50 - [agent] tool=list_tables args={'session_id': '51f0c105-94c7-46f3-94db-30743bd06d9d'}
+2026-06-09 18:08:02.010 | INFO     | core.agent:run_agent:90 - [agent] final_answer: Voici les tables disponibles dans la base de données :
+
+- **audit_log**
+- **clients_v2**
+- **contrats**
+- **data_paiements**
+- **produits_assurance**
+- **sinistres_tbl**
+- **table_a**
+- **tbl_experts*
+2026-06-09 18:08:02.011 | INFO     | routes.chat:chat_message:47 - [e03ac5f6] AI   >> Voici les tables disponibles dans la base de données :
+
+- **audit_log**
+- **clients_v2**
+- **contrats**
+- **data_paiements**
+- **produits_assurance**
+- **sinistres_tbl**
+- **table_a**
+- **tbl_experts*
