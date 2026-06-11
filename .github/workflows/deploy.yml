@@ -7,10 +7,7 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  # Transforme en minuscules (requis par ghcr.io)
-  REPO_LOWER: ${{ github.repository_owner }}/${{ github.event.repository.name }}
 
-  
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
@@ -58,3 +55,71 @@ jobs:
           tags: |
             ${{ env.REGISTRY }}/${{ env.REPO_LOWER }}/client-web:latest
             ${{ env.REGISTRY }}/${{ env.REPO_LOWER }}/client-web:${{ github.sha }}
+
+      # ── 6. Deploy sur la VM via SSH ──────────────────────
+      - name: Deploy to VM
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VM_HOST }}
+          username: ${{ secrets.VM_USER }}
+          key: ${{ secrets.VM_SSH_KEY }}
+          script: |
+            set -e
+
+            # Répertoire de déploiement sur la VM
+            APP_DIR="/opt/analytics-assistant"
+            mkdir -p $APP_DIR
+            cd $APP_DIR
+
+            # Login ghcr.io depuis la VM
+            echo "${{ secrets.GITHUB_TOKEN }}" | \
+              docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
+            # Mise à jour du docker-compose.yml depuis le repo
+            cat > docker-compose.yml << 'COMPOSE'
+            version: "3.9"
+            services:
+              mcp-server:
+                image: ghcr.io/${{ env.REPO_LOWER }}/mcp-server:latest
+                container_name: mcp-server
+                restart: unless-stopped
+                env_file: [.env]
+                ports: ["8000:8000"]
+                healthcheck:
+                  test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+                  interval: 30s
+                  timeout: 10s
+                  retries: 3
+                  start_period: 15s
+                networks: [analytics-net]
+              client-web:
+                image: ghcr.io/${{ env.REPO_LOWER }}/client-web:latest
+                container_name: client-web
+                restart: unless-stopped
+                env_file: [.env]
+                ports: ["5050:5050"]
+                depends_on:
+                  mcp-server:
+                    condition: service_healthy
+                volumes:
+                  - prompt-cache:/app/web/system_prompts
+                  - app-logs:/app/web/logs
+                networks: [analytics-net]
+            volumes:
+              prompt-cache:
+              app-logs:
+            networks:
+              analytics-net:
+                driver: bridge
+            COMPOSE
+
+            # Pull des nouvelles images
+            docker compose pull
+
+            # Redémarrage avec zero-downtime
+            docker compose up -d --remove-orphans
+
+            # Nettoyage des images obsolètes
+            docker image prune -f
+
+            echo "✅ Déploiement terminé — $(date)"
