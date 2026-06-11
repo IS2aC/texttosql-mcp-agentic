@@ -38,11 +38,11 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      # ── 5. Build & push MCP server ───────────────────────
+       # ── 5. Build & push MCP server ───────────────────────
       - name: Build and push MCP server image
         uses: docker/build-push-action@v5
         with:
-          context: .
+          context: ./server
           file: server/Dockerfile
           push: true
           provenance: false
@@ -55,7 +55,7 @@ jobs:
       - name: Build and push client web image
         uses: docker/build-push-action@v5
         with:
-          context: .
+          context: ./client
           file: client/Dockerfile
           push: true
           provenance: false
