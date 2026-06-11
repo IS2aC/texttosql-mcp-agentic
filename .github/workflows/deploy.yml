@@ -3,7 +3,7 @@ name: Build & Deploy
 on:
   push:
     branches: [main]
-  workflow_dispatch:   # permet de déclencher manuellement depuis GitHub
+  workflow_dispatch:
 
 env:
   REGISTRY: ghcr.io
@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      packages: write   # nécessaire pour pusher sur ghcr.io
+      packages: write
 
     steps:
 
@@ -38,7 +38,7 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-       # ── 5. Build & push MCP server ───────────────────────
+      # ── 5. Build & push MCP server ───────────────────────
       - name: Build and push MCP server image
         uses: docker/build-push-action@v5
         with:
@@ -75,60 +75,63 @@ jobs:
           script: |
             set -e
 
-            # Répertoire de déploiement sur la VM
             APP_DIR="/home/debian/analytics-assistant"
             mkdir -p $APP_DIR
             cd $APP_DIR
 
-            # Login ghcr.io depuis la VM
             echo "${{ secrets.GITHUB_TOKEN }}" | \
               docker login ghcr.io -u ${{ github.actor }} --password-stdin
 
-            # Mise à jour du docker-compose.yml depuis le repo
             cat > docker-compose.yml << COMPOSE
-            version: "3.9"
             services:
-              mcp-server:
+              server:
                 image: ghcr.io/${{ env.REPO_LOWER }}/mcp-server:latest
                 container_name: mcp-server
-                restart: unless-stopped
+                environment:
+                  - OLLAMA_HOST=http://host.docker.internal:11434
+                  - FASTMCP_HOST=0.0.0.0
+                  - FASTMCP_PORT=8000
                 env_file: [.env]
                 ports: ["49154:8000"]
+                extra_hosts:
+                  - "host.docker.internal:host-gateway"
+                restart: unless-stopped
+                networks: [internal]
                 healthcheck:
                   test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/sse')"]
                   interval: 10s
                   timeout: 5s
                   retries: 10
                   start_period: 15s
-                networks: [analytics-net]
-              client-web:
+
+              client:
                 image: ghcr.io/${{ env.REPO_LOWER }}/client-web:latest
-                container_name: client-web
-                restart: unless-stopped
+                container_name: mcp-client
+                environment:
+                  - MCP_SERVER_URL=http://server:8000/sse
+                  - OLLAMA_HOST=http://host.docker.internal:11434
                 env_file: [.env]
-                ports: ["49153:5050"]
-                depends_on:
-                  mcp-server:
-                    condition: service_healthy
                 volumes:
-                  - prompt-cache:/app/web/system_prompts
-                  - app-logs:/app/web/logs
-                networks: [analytics-net]
+                  - prompts_data:/app/web/system_prompts
+                ports: ["49153:5050"]
+                extra_hosts:
+                  - "host.docker.internal:host-gateway"
+                depends_on:
+                  server:
+                    condition: service_healthy
+                restart: unless-stopped
+                networks: [internal]
+
             volumes:
-              prompt-cache:
-              app-logs:
+              prompts_data:
+
             networks:
-              analytics-net:
+              internal:
                 driver: bridge
             COMPOSE
 
-            # Pull des nouvelles images
             docker compose pull
-
-            # Redémarrage avec zero-downtime
             docker compose up -d --remove-orphans
-
-            # Nettoyage des images obsolètes
             docker image prune -f
 
             echo "✅ Déploiement terminé — $(date)"
