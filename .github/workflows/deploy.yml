@@ -95,10 +95,10 @@ jobs:
                 env_file: [.env]
                 ports: ["8000:8000"]
                 healthcheck:
-                  test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
-                  interval: 30s
-                  timeout: 10s
-                  retries: 3
+                  test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/sse')"]
+                  interval: 10s
+                  timeout: 5s
+                  retries: 10
                   start_period: 15s
                 networks: [analytics-net]
               client-web:
