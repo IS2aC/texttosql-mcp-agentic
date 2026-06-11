@@ -64,37 +64,74 @@ jobs:
             ${{ env.REGISTRY }}/${{ env.REPO_LOWER }}/client-web:latest
             ${{ env.REGISTRY }}/${{ env.REPO_LOWER }}/client-web:${{ github.sha }}
 
-      # ── 7. Copie des fichiers compose vers la VM ─────────
-      - name: Copy compose files to VM
-        uses: appleboy/scp-action@v0.1.7
-        with:
-          host: ${{ secrets.VM_HOST }}
-          username: ${{ secrets.VM_USER }}
-          key: ${{ secrets.VM_SSH_KEY }}
-          source: "docker-compose.yml,docker-compose.prod.yml"
-          target: "/home/debian/analytics-assistant"
-          strip_components: 0
-
-      # ── 8. Deploy sur la VM via SSH ──────────────────────
+      # ── 7. Deploy sur la VM via SSH ──────────────────────
       - name: Deploy to VM
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.VM_HOST }}
           username: ${{ secrets.VM_USER }}
           key: ${{ secrets.VM_SSH_KEY }}
-          envs: REPO_LOWER,REGISTRY
+          envs: REPO_LOWER
           script: |
             set -e
-            cd /home/debian/analytics-assistant
 
-            export REGISTRY="${{ env.REGISTRY }}"
-            export REPO_LOWER="${{ env.REPO_LOWER }}"
+            APP_DIR="/home/debian/analytics-assistant"
+            mkdir -p $APP_DIR
+            cd $APP_DIR
 
             echo "${{ secrets.GITHUB_TOKEN }}" | \
               docker login ghcr.io -u ${{ github.actor }} --password-stdin
 
-            docker compose -f docker-compose.yml -f docker-compose.prod.yml pull
-            docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --remove-orphans
+            cat > docker-compose.yml << COMPOSE
+            services:
+              server:
+                image: ghcr.io/${{ env.REPO_LOWER }}/mcp-server:latest
+                container_name: mcp-server
+                environment:
+                  - OLLAMA_HOST=http://host.docker.internal:11434
+                  - FASTMCP_HOST=0.0.0.0
+                  - FASTMCP_PORT=8000
+                env_file: [.env]
+                ports: ["49154:8000"]
+                extra_hosts:
+                  - "host.docker.internal:host-gateway"
+                restart: unless-stopped
+                networks: [internal]
+                healthcheck:
+                  test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/sse')"]
+                  interval: 10s
+                  timeout: 5s
+                  retries: 10
+                  start_period: 15s
+
+              client:
+                image: ghcr.io/${{ env.REPO_LOWER }}/client-web:latest
+                container_name: mcp-client
+                environment:
+                  - MCP_SERVER_URL=http://server:8000/sse
+                  - OLLAMA_HOST=http://host.docker.internal:11434
+                env_file: [.env]
+                volumes:
+                  - prompts_data:/app/web/system_prompts
+                ports: ["49153:5050"]
+                extra_hosts:
+                  - "host.docker.internal:host-gateway"
+                depends_on:
+                  server:
+                    condition: service_healthy
+                restart: unless-stopped
+                networks: [internal]
+
+            volumes:
+              prompts_data:
+
+            networks:
+              internal:
+                driver: bridge
+            COMPOSE
+
+            docker compose pull
+            docker compose up -d --remove-orphans
             docker image prune -f
 
             echo "✅ Déploiement terminé — $(date)"
