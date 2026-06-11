@@ -10,12 +10,13 @@ env:
   # Transforme en minuscules (requis par ghcr.io)
   REPO_LOWER: ${{ github.repository_owner }}/${{ github.event.repository.name }}
 
+  
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      packages: write   # nécessaire pour pusher sur ghcr.io
+      packages: write
 
     steps:
 
@@ -23,7 +24,12 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # ── 2. Login ghcr.io ─────────────────────────────────
+      # ── 2. Calcul du nom de repo en minuscules ───────────
+      - name: Compute lowercase repo name
+        run: |
+          echo "REPO_LOWER=$(echo '${{ github.repository }}' | tr '[:upper:]' '[:lower:]')" >> "$GITHUB_ENV"
+
+      # ── 3. Login ghcr.io ─────────────────────────────────
       - name: Log in to GitHub Container Registry
         uses: docker/login-action@v3
         with:
@@ -31,7 +37,7 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      # ── 3. Build & push MCP server ───────────────────────
+      # ── 4. Build & push MCP server ───────────────────────
       - name: Build and push MCP server image
         uses: docker/build-push-action@v5
         with:
@@ -42,7 +48,7 @@ jobs:
             ${{ env.REGISTRY }}/${{ env.REPO_LOWER }}/mcp-server:latest
             ${{ env.REGISTRY }}/${{ env.REPO_LOWER }}/mcp-server:${{ github.sha }}
 
-      # ── 4. Build & push client web ───────────────────────
+      # ── 5. Build & push client web ───────────────────────
       - name: Build and push client web image
         uses: docker/build-push-action@v5
         with:
@@ -52,72 +58,3 @@ jobs:
           tags: |
             ${{ env.REGISTRY }}/${{ env.REPO_LOWER }}/client-web:latest
             ${{ env.REGISTRY }}/${{ env.REPO_LOWER }}/client-web:${{ github.sha }}
-
-      # ── 5. Deploy sur la VM via SSH ──────────────────────
-      - name: Deploy to VM
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.VM_HOST }}
-          username: ${{ secrets.VM_USER }}
-          key: ${{ secrets.VM_SSH_KEY }}
-          script: |
-            set -e
-
-            # Répertoire de déploiement sur la VM
-            APP_DIR="/opt/analytics-assistant"
-            mkdir -p $APP_DIR
-            cd $APP_DIR
-
-            # Login ghcr.io depuis la VM
-            echo "${{ secrets.GITHUB_TOKEN }}" | \
-              docker login ghcr.io -u ${{ github.actor }} --password-stdin
-
-            # Mise à jour du docker-compose.yml depuis le repo
-            # (copié via SSH ou versionné — ici on l'écrit directement)
-            cat > docker-compose.yml << 'COMPOSE'
-            version: "3.9"
-            services:
-              mcp-server:
-                image: ghcr.io/${{ env.REPO_LOWER }}/mcp-server:latest
-                container_name: mcp-server
-                restart: unless-stopped
-                env_file: [.env]
-                ports: ["8000:8000"]
-                healthcheck:
-                  test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
-                  interval: 30s
-                  timeout: 10s
-                  retries: 3
-                  start_period: 15s
-                networks: [analytics-net]
-              client-web:
-                image: ghcr.io/${{ env.REPO_LOWER }}/client-web:latest
-                container_name: client-web
-                restart: unless-stopped
-                env_file: [.env]
-                ports: ["5050:5050"]
-                depends_on:
-                  mcp-server:
-                    condition: service_healthy
-                volumes:
-                  - prompt-cache:/app/web/system_prompts
-                  - app-logs:/app/web/logs
-                networks: [analytics-net]
-            volumes:
-              prompt-cache:
-              app-logs:
-            networks:
-              analytics-net:
-                driver: bridge
-            COMPOSE
-
-            # Pull des nouvelles images
-            docker compose pull
-
-            # Redémarrage avec zero-downtime
-            docker compose up -d --remove-orphans
-
-            # Nettoyage des images obsolètes
-            docker image prune -f
-
-            echo "✅ Déploiement terminé — $(date)"
