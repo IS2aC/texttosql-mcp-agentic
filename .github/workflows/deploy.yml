@@ -76,7 +76,7 @@ jobs:
             set -e
 
             # Répertoire de déploiement sur la VM
-            APP_DIR="/opt/analytics-assistant"
+            APP_DIR="/home/debian/analytics-assistant"
             mkdir -p $APP_DIR
             cd $APP_DIR
 
