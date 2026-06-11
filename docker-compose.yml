@@ -9,8 +9,7 @@ services:
       - OLLAMA_HOST=http://host.docker.internal:11434
       - FASTMCP_HOST=0.0.0.0
       - FASTMCP_PORT=8000
-    env_file:
-      - ./server/.env
+    env_file: [.env]
     ports:
       - "49154:8000"
     extra_hosts:
@@ -34,8 +33,7 @@ services:
     environment:
       - MCP_SERVER_URL=http://server:8000/sse
       - OLLAMA_HOST=http://host.docker.internal:11434
-    env_file:
-      - ./client/.env
+    env_file: [.env]
     volumes:
       - prompts_data:/app/web/system_prompts
     ports:
