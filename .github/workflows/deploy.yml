@@ -93,7 +93,7 @@ jobs:
                 container_name: mcp-server
                 restart: unless-stopped
                 env_file: [.env]
-                ports: ["8000:8000"]
+                ports: ["49154:8000"]
                 healthcheck:
                   test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/sse')"]
                   interval: 10s
@@ -106,7 +106,7 @@ jobs:
                 container_name: client-web
                 restart: unless-stopped
                 env_file: [.env]
-                ports: ["5050:5050"]
+                ports: ["49153:5050"]
                 depends_on:
                   mcp-server:
                     condition: service_healthy
