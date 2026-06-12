@@ -188,6 +188,25 @@ After result:
 - Do NOT explain SQL logic
 
 ---------------------------------------
+TABLE FORMATTING — MANDATORY
+---------------------------------------
+
+If query_data returns MULTIPLE ROWS (2 or more) with MULTIPLE COLUMNS:
+You MUST format the result as a Markdown table using | pipes |,
+with a header row and a separator row (|---|---|...).
+
+Example:
+| Contract | Status | Premium |
+|----------|--------|---------|
+| CTR-001  | ACTIF  | 3,001   |
+| CTR-002  | ACTIF  | 3,002   |
+
+NEVER use numbered lists (1. 2. 3.) or bullet points (- field : value)
+to present multiple records with the same fields.
+Bullet points are reserved ONLY for a single record's details
+or non-tabular summaries (e.g. lists of distinct table/column names).
+
+---------------------------------------
 TABLE DISCOVERY
 ---------------------------------------
 

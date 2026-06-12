@@ -465,7 +465,77 @@
       <div class="table-meta">${body.length} ligne${body.length > 1 ? 's' : ''} · ${header.length} colonne${header.length > 1 ? 's' : ''}</div>`;
   }
 
+  /**
+   * Détecte un pattern de type :
+   * 1. **Contrat 1**
+   * - Clé A : valeur
+   * - Clé B : valeur
+   *
+   * 2. **Contrat 2**
+   * - Clé A : valeur
+   * - Clé B : valeur
+   *
+   * Si au moins 2 blocs numérotés partagent au moins 70% des mêmes clés,
+   * retourne un tableau HTML. Sinon retourne null.
+   */
+  function recordListToTable(text) {
+    const blockRegex = /(?:^|\n)\s*\d+\.\s*(?:\*\*.*?\*\*)?\s*\n((?:[^\n]*\n?)+?)(?=\n\s*\d+\.\s|\s*$)/g;
+
+    const blocks = [];
+    let match;
+    while ((match = blockRegex.exec(text)) !== null) {
+      const body = match[1];
+      const fields = {};
+      const order = [];
+
+      body.split('\n').forEach(line => {
+        const lineMatch = line.match(/^\s*[-*]\s*(.+?)\s*:\s*(.+?)\s*$/);
+        if (lineMatch) {
+          const key = lineMatch[1].replace(/\*\*/g, '').trim();
+          const val = lineMatch[2].replace(/\*\*/g, '').trim();
+          fields[key] = val;
+          order.push(key);
+        }
+      });
+
+      if (Object.keys(fields).length > 0) {
+        blocks.push({ fields, order });
+      }
+    }
+
+    if (blocks.length < 2) return null;
+
+    const referenceKeys = blocks[0].order;
+    const allShareKeys = blocks.every(b => {
+      const overlap = referenceKeys.filter(k => k in b.fields);
+      return overlap.length >= Math.ceil(referenceKeys.length * 0.7);
+    });
+
+    if (!allShareKeys) return null;
+
+    const headers = referenceKeys;
+    const thHtml = headers.map(h => `<th>${escapeHtml(h)}</th>`).join('');
+    const tbodyHtml = blocks.map(b => {
+      const cells = headers.map(h => `<td>${escapeHtml(b.fields[h] ?? '—')}</td>`).join('');
+      return `<tr>${cells}</tr>`;
+    }).join('');
+
+    return `
+      <div class="table-wrapper">
+        <table class="result-table">
+          <thead><tr>${thHtml}</tr></thead>
+          <tbody>${tbodyHtml}</tbody>
+        </table>
+      </div>
+      <div class="table-meta">${blocks.length} ligne${blocks.length > 1 ? 's' : ''} · ${headers.length} colonne${headers.length > 1 ? 's' : ''}</div>`;
+  }
+
   function formatAnswer(raw) {
+    // 1. Tentative : pattern "liste de records numérotés" → tableau
+    const recordTable = recordListToTable(raw);
+    if (recordTable) return recordTable;
+
+    // 2. Sinon : tableaux Markdown (| ... |) + texte normal
     const parts = [];
     const lines = raw.split('\n');
     let tableLines = [], textLines = [];

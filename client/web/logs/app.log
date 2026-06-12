@@ -26,3 +26,63 @@
 - **sinistres_tbl**
 - **table_a**
 - **tbl_experts*
+2026-06-12 12:49:50.325 | WARNING  | routes.register:register:142 - Connexion refusée (postgresql): Impossible de se connecter à PostgreSQL : connection to server at "76.13.39.217", port 5432 failed: FATAL:  password authentication failed for user "test_user". Vérifier host, port, database, user et password.
+2026-06-12 12:50:25.976 | INFO     | routes.register:register:170 - Session créée (postgresql) → 9f547f34…
+2026-06-12 12:50:32.887 | INFO     | routes.chat:chat_schema:79 - [schema] 7 tables parsées pour postgresql
+2026-06-12 12:50:58.613 | INFO     | routes.chat:chat_message:45 - [9f547f34] USER >> affiche moi 3 observations de la tables contrat
+2026-06-12 12:51:01.890 | INFO     | core.agent:run_agent:50 - [agent] tool=list_tables args={'session_id': '46e39422-53c6-479e-af0f-94845917150b'}
+2026-06-12 12:51:06.363 | INFO     | core.agent:run_agent:90 - [agent] final_answer: Il semble qu'il n'y ait pas de table nommée "contrat" dans la base de données. Cependant, la table "souscriptions" pourrait correspondre à ce que vous cherchez, car elle contient des informations sur 
+2026-06-12 12:51:06.363 | INFO     | routes.chat:chat_message:47 - [9f547f34] AI   >> Il semble qu'il n'y ait pas de table nommée "contrat" dans la base de données. Cependant, la table "souscriptions" pourrait correspondre à ce que vous cherchez, car elle contient des informations sur 
+2026-06-12 12:51:39.967 | INFO     | routes.chat:chat_message:45 - [9f547f34] USER >> affiche moi 3 observations de la tables sinitres
+2026-06-12 12:51:41.491 | INFO     | core.agent:run_agent:50 - [agent] tool=preview_table args={'session_id': '46e39422-53c6-479e-af0f-94845917150b', 'table_name': 'sinistres', 'limit': 3}
+2026-06-12 12:51:48.540 | INFO     | core.agent:run_agent:90 - [agent] final_answer: Voici trois observations de la table "sinistres" :
+
+| ID Sinistre | Numéro Sinistre | ID Souscription | ID Client | Date Sinistre | Date Déclaration | Type Sinistre     | Description                  
+2026-06-12 12:51:48.540 | INFO     | routes.chat:chat_message:47 - [9f547f34] AI   >> Voici trois observations de la table "sinistres" :
+
+| ID Sinistre | Numéro Sinistre | ID Souscription | ID Client | Date Sinistre | Date Déclaration | Type Sinistre     | Description                  
+2026-06-12 15:02:33.429 | INFO     | routes.chat:chat_message:45 - [9f547f34] USER >> Liste les tables disponibles
+2026-06-12 15:02:35.879 | INFO     | core.agent:run_agent:90 - [agent] final_answer: Voici les tables disponibles dans la base de données :
+
+- agences
+- agents
+- clients
+- paiements_primes
+- produits
+- sinistres
+- souscriptions
+2026-06-12 15:02:35.879 | INFO     | routes.chat:chat_message:47 - [9f547f34] AI   >> Voici les tables disponibles dans la base de données :
+
+- agences
+- agents
+- clients
+- paiements_primes
+- produits
+- sinistres
+- souscriptions
+2026-06-12 15:03:55.486 | INFO     | routes.chat:chat_message:45 - [9f547f34] USER >> top3 agents (nom, prenom, salaire de base, poste) qui ont ramené le plus de clients ?
+2026-06-12 15:03:57.815 | INFO     | core.agent:run_agent:50 - [agent] tool=query_data args={'session_id': '46e39422-53c6-479e-af0f-94845917150b', 'sql_query': 'SELECT a.nom, a.prenom, a.salaire_base, a.poste, COUNT(c.id_client) AS nombre_clients \nFROM agents a\nJOIN clients c ON a.id_agent = c.id_agent\nGROUP BY a.id_agent, a.nom, a.prenom, a.salaire_base, a.poste\nORDER BY nombre_clients DESC\nLIMIT 3;'}
+2026-06-12 15:04:00.994 | INFO     | core.agent:run_agent:90 - [agent] final_answer: Voici les trois agents qui ont ramené le plus de clients :
+
+| Nom      | Prénom    | Salaire de Base | Poste                | Nombre de Clients |
+|----------|-----------|-----------------|------------
+2026-06-12 15:04:00.994 | INFO     | routes.chat:chat_message:47 - [9f547f34] AI   >> Voici les trois agents qui ont ramené le plus de clients :
+
+| Nom      | Prénom    | Salaire de Base | Poste                | Nombre de Clients |
+|----------|-----------|-----------------|------------
+2026-06-12 15:06:14.805 | INFO     | routes.chat:chat_message:45 - [9f547f34] USER >> join l'information precedente au montant payer
+2026-06-12 15:06:18.601 | INFO     | core.agent:run_agent:50 - [agent] tool=query_data args={'session_id': '46e39422-53c6-479e-af0f-94845917150b', 'sql_query': 'SELECT a.nom, a.prenom, a.salaire_base, a.poste, COUNT(c.id_client) AS nombre_clients, SUM(pp.montant_paye) AS montant_total_paye\nFROM agents a\nJOIN clients c ON a.id_agent = c.id_agent\nJOIN souscriptions s ON c.id_client = s.id_client\nJOIN paiements_primes pp ON s.id_souscription = pp.id_souscription\nGROUP BY a.id_agent, a.nom, a.prenom, a.salaire_base, a.poste\nORDER BY nombre_clients DESC\nLIMIT 3;'}
+2026-06-12 15:06:21.654 | INFO     | core.agent:run_agent:90 - [agent] final_answer: Voici les trois agents qui ont ramené le plus de clients, avec le montant total payé :
+
+| Nom      | Prénom    | Salaire de Base | Poste                | Nombre de Clients | Montant Total Payé |
+|----
+2026-06-12 15:06:21.654 | INFO     | routes.chat:chat_message:47 - [9f547f34] AI   >> Voici les trois agents qui ont ramené le plus de clients, avec le montant total payé :
+
+| Nom      | Prénom    | Salaire de Base | Poste                | Nombre de Clients | Montant Total Payé |
+|----
+2026-06-12 15:13:52.597 | WARNING  | routes.register:register:142 - Connexion refusée (demo): Impossible de se connecter à PostgreSQL : connection to server at "76.13.39.217", port 5432 failed: FATAL:  password authentication failed for user "postgres". Vérifier host, port, database, user et password.
+2026-06-12 15:16:44.054 | INFO     | routes.register:register:170 - Session créée (demo) → d00cdf7b…
+2026-06-12 15:16:51.358 | INFO     | routes.chat:chat_schema:79 - [schema] 7 tables parsées pour demo
+2026-06-12 15:17:00.994 | INFO     | routes.register:register:170 - Session créée (demo) → 71a593fb…
+2026-06-12 15:17:09.374 | INFO     | routes.chat:chat_schema:79 - [schema] 7 tables parsées pour demo
+2026-06-12 15:17:21.089 | INFO     | routes.chat:chat_schema:79 - [schema] 7 tables parsées pour demo
