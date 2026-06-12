@@ -2,7 +2,7 @@
 import asyncio
 from flask import Blueprint, render_template, request, jsonify, session, redirect, url_for
 from loguru import logger
-from core import session_store, mcp_client
+from core import session_store, mcp_client, shortcuts_store
 from core.agent import run_agent
 from system_prompt_generator import SystemPromptGenerator
 
@@ -109,7 +109,6 @@ def chat_refresh():
             "error": "Credentials non disponibles. Reconnectez-vous."
         }), 400
 
-    # Lecture du nouveau context_file si uploadé via la modal
     new_context_text = ""
     if "context_file" in request.files:
         context_file = request.files.get("context_file")
@@ -123,7 +122,6 @@ def chat_refresh():
             except Exception as e:
                 logger.warning(f"[refresh] Lecture context_file échouée : {e}")
 
-    # Refresh du system prompt
     try:
         gen = SystemPromptGenerator(
             database_name=credentials["database"],
@@ -143,7 +141,6 @@ def chat_refresh():
         logger.error(f"[{uid[:8]}] refresh erreur : {e}")
         return jsonify({"error": f"Refresh échoué : {str(e)}"}), 500
 
-    # Mise à jour session : nouveau sys prompt + reset historique
     user_session["messages"] = [{"role": "system", "content": new_system_prompt}]
 
     logger.info(f"[{uid[:8]}] Refresh OK — {tables_count} tables")
@@ -152,6 +149,61 @@ def chat_refresh():
         "tables_count": tables_count,
         "message":      f"Schéma mis à jour — {tables_count} tables détectées",
     })
+
+
+# ──────────────────────────────────────────────
+# Raccourcis d'analyse — CRUD via CSV
+# ──────────────────────────────────────────────
+@chat_bp.route("/chat/shortcuts", methods=["GET"])
+def chat_shortcuts_list():
+    """Retourne la liste des raccourcis enregistrés."""
+    uid, user_session = _get_user_session()
+    if not user_session:
+        return jsonify({"error": "Session expirée"}), 401
+
+    shortcuts = shortcuts_store.list_shortcuts()
+    return jsonify({"shortcuts": shortcuts})
+
+
+@chat_bp.route("/chat/shortcuts", methods=["POST"])
+def chat_shortcuts_add():
+    """
+    Ajoute un nouveau raccourci.
+    Body JSON attendu : { "name": "Top 5 produits", "libelle": "Quels sont les 5 produits les plus vendus ?" }
+    """
+    uid, user_session = _get_user_session()
+    if not user_session:
+        return jsonify({"error": "Session expirée"}), 401
+
+    data    = request.get_json() or {}
+    name    = (data.get("name") or "").strip()
+    libelle = (data.get("libelle") or "").strip()
+
+    if not name or not libelle:
+        return jsonify({"error": "Le nom et l'intitulé sont obligatoires."}), 400
+
+    try:
+        record = shortcuts_store.add_shortcut(name, libelle)
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
+
+    logger.info(f"[{uid[:8]}] Raccourci ajouté : '{name}'")
+    return jsonify({"status": "ok", "shortcut": record})
+
+
+@chat_bp.route("/chat/shortcuts/<id_raccourci>", methods=["DELETE"])
+def chat_shortcuts_delete(id_raccourci):
+    """Supprime un raccourci par son id."""
+    uid, user_session = _get_user_session()
+    if not user_session:
+        return jsonify({"error": "Session expirée"}), 401
+
+    deleted = shortcuts_store.delete_shortcut(id_raccourci)
+    if not deleted:
+        return jsonify({"error": "Raccourci introuvable"}), 404
+
+    logger.info(f"[{uid[:8]}] Raccourci supprimé : {id_raccourci[:8]}")
+    return jsonify({"status": "ok"})
 
 
 @chat_bp.route("/chat/disconnect", methods=["POST"])

@@ -268,6 +268,57 @@
       animation: spin .7s linear infinite; display: none;
     }
     @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Raccourcis dynamiques ── */
+    .quick-queries-header {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 8px;
+    }
+    .quick-add-btn {
+      width: 20px; height: 20px; border-radius: 6px;
+      border: 1.5px solid var(--border); background: var(--white);
+      color: var(--sky-600); font-size: 14px; font-weight: 700;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; transition: all .15s; line-height: 1; padding: 0;
+    }
+    .quick-add-btn:hover { border-color: var(--sky-400); background: var(--sky-100); }
+
+    .quick-btn-wrap { position: relative; }
+    .quick-btn-wrap .quick-btn { padding-right: 28px; width: 100%; }
+    .quick-del-btn {
+      position: absolute; right: 6px; top: 50%; transform: translateY(-50%);
+      width: 18px; height: 18px; border-radius: 5px;
+      border: none; background: transparent; color: var(--text-muted);
+      font-size: 13px; cursor: pointer; display: none;
+      align-items: center; justify-content: center; line-height: 1;
+    }
+    .quick-btn-wrap:hover .quick-del-btn { display: flex; }
+    .quick-del-btn:hover { color: var(--error); background: #fdf2f2; }
+
+    /* ── Form fields modal raccourci ── */
+    .modal-field { margin-bottom: 16px; }
+    .modal-field label {
+      display: block; font-size: 12px; font-weight: 600;
+      color: var(--text-primary); margin-bottom: 6px;
+    }
+    .modal-field input,
+    .modal-field textarea {
+      width: 100%; padding: 10px 12px;
+      border: 1.5px solid var(--border); border-radius: 9px;
+      font-family: inherit; font-size: 13px; color: var(--text-primary);
+      background: var(--surface); outline: none;
+      transition: border-color .2s, box-shadow .2s;
+      resize: vertical;
+    }
+    .modal-field input:focus,
+    .modal-field textarea:focus {
+      border-color: var(--sky-400);
+      box-shadow: 0 0 0 3px rgba(46,147,209,.10);
+      background: var(--white);
+    }
+    .modal-field .field-hint {
+      font-size: 11px; color: var(--text-muted); margin-top: 4px;
+    }
   </style>
 </head>
 <body>
@@ -329,12 +380,12 @@
       </div>
     </div>
     <div>
-      <div class="sidebar-section-title">Raccourcis</div>
-      <div class="quick-queries">
-        <button class="quick-btn" onclick="quickSend('Liste les tables disponibles')">🗂 Lister les tables</button>
-        <button class="quick-btn" onclick="quickSend('Montre moi un aperçu de chaque table')">👁 Aperçu des données</button>
-        <button class="quick-btn" onclick="quickSend('Combien de lignes dans chaque table ?')">🔢 Compter les lignes</button>
-        <button class="quick-btn" onclick="quickSend('Quelles sont les colonnes de chaque table ?')">📋 Détail des colonnes</button>
+      <div class="quick-queries-header">
+        <div class="sidebar-section-title" style="margin-bottom:0">Raccourcis</div>
+        <button class="quick-add-btn" onclick="openShortcutModal()" title="Ajouter une analyse">+</button>
+      </div>
+      <div class="quick-queries" id="quick-queries">
+        <div class="schema-loading">⏳ Chargement...</div>
       </div>
     </div>
   </aside>
@@ -406,6 +457,36 @@
       <button class="btn-modal-confirm" id="btn-confirm-refresh" onclick="confirmRefresh()">
         <div class="spinner" id="refresh-spinner"></div>
         <span id="refresh-btn-label">Confirmer le refresh</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ✅ Modal Nouvelle analyse (raccourci) -->
+<div class="modal-overlay" id="shortcut-modal">
+  <div class="modal-card">
+    <div class="modal-title">⚡ Nouvelle analyse</div>
+    <div class="modal-sub">
+      Créez un raccourci réutilisable : un clic enverra automatiquement la question au chat.
+    </div>
+
+    <div class="modal-field">
+      <label for="shortcut-name">Intitulé du bouton</label>
+      <input type="text" id="shortcut-name" placeholder="Ex : Top 5 produits"/>
+      <div class="field-hint">Texte court affiché sur le bouton dans la sidebar.</div>
+    </div>
+
+    <div class="modal-field">
+      <label for="shortcut-libelle">Question / analyse</label>
+      <textarea id="shortcut-libelle" rows="3" placeholder="Ex : Quels sont les 5 produits les plus vendus ce trimestre ?"></textarea>
+      <div class="field-hint">Texte exact envoyé au chat lors du clic.</div>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn-modal-cancel" onclick="closeShortcutModal()">Annuler</button>
+      <button class="btn-modal-confirm" id="btn-confirm-shortcut" onclick="confirmAddShortcut()">
+        <div class="spinner" id="shortcut-spinner"></div>
+        <span id="shortcut-btn-label">Ajouter</span>
       </button>
     </div>
   </div>
@@ -799,14 +880,122 @@
     messagesEl.insertBefore(welcome, messagesEl.firstChild);
   }
 
-  // Fermer la modal en cliquant sur l'overlay
-  document.getElementById('refresh-modal').addEventListener('click', function(e) {
-    if (e.target === this) closeRefreshModal();
+  // ── Modal Nouvelle analyse (raccourcis) ───────────────
+  function openShortcutModal() {
+    document.getElementById('shortcut-modal').classList.add('open');
+  }
+
+  function closeShortcutModal() {
+    document.getElementById('shortcut-modal').classList.remove('open');
+    document.getElementById('shortcut-name').value = '';
+    document.getElementById('shortcut-libelle').value = '';
+  }
+
+  async function confirmAddShortcut() {
+    const name    = document.getElementById('shortcut-name').value.trim();
+    const libelle = document.getElementById('shortcut-libelle').value.trim();
+
+    if (!name || !libelle) {
+      showToast('Nom et question requis', 'error');
+      return;
+    }
+
+    const btn     = document.getElementById('btn-confirm-shortcut');
+    const spinner = document.getElementById('shortcut-spinner');
+    const label   = document.getElementById('shortcut-btn-label');
+
+    btn.disabled          = true;
+    spinner.style.display = 'block';
+    label.textContent     = 'Ajout…';
+
+    try {
+      const res = await fetch('/chat/shortcuts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, libelle }),
+      });
+
+      if (res.status === 401) { window.location.href = '/register'; return; }
+
+      const data = await res.json();
+
+      if (!res.ok || data.error) {
+        showToast(data.error || 'Erreur lors de l\'ajout', 'error');
+      } else {
+        closeShortcutModal();
+        showToast('Raccourci ajouté');
+        loadShortcuts();
+      }
+    } catch (err) {
+      showToast('Erreur réseau : ' + err.message, 'error');
+    } finally {
+      btn.disabled          = false;
+      spinner.style.display = 'none';
+      label.textContent     = 'Ajouter';
+    }
+  }
+
+  async function deleteShortcut(id, evt) {
+    evt.stopPropagation();
+    try {
+      const res = await fetch(`/chat/shortcuts/${id}`, { method: 'DELETE' });
+      if (res.status === 401) { window.location.href = '/register'; return; }
+      const data = await res.json();
+      if (!res.ok || data.error) {
+        showToast(data.error || 'Erreur lors de la suppression', 'error');
+      } else {
+        loadShortcuts();
+      }
+    } catch (err) {
+      showToast('Erreur réseau : ' + err.message, 'error');
+    }
+  }
+
+  let _shortcutsData = {};
+
+  function quickSendShortcut(id) {
+    const libelle = _shortcutsData[id];
+    if (libelle) quickSend(libelle);
+  }
+
+  async function loadShortcuts() {
+    const container = document.getElementById('quick-queries');
+    try {
+      const res  = await fetch('/chat/shortcuts');
+      const data = await res.json();
+      const shortcuts = data.shortcuts || [];
+
+      _shortcutsData = {};
+      shortcuts.forEach(s => { _shortcutsData[s.id_raccourci] = s.libelle; });
+
+      if (shortcuts.length === 0) {
+        container.innerHTML = `
+          <div class="schema-loading">Aucun raccourci — cliquez sur + pour en créer un</div>`;
+        return;
+      }
+
+      container.innerHTML = shortcuts.map(s => `
+        <div class="quick-btn-wrap">
+          <button class="quick-btn" onclick="quickSendShortcut('${s.id_raccourci}')">
+            ⚡ ${escapeHtml(s.name)}
+          </button>
+          <button class="quick-del-btn" onclick="deleteShortcut('${s.id_raccourci}', event)" title="Supprimer">✕</button>
+        </div>`).join('');
+
+    } catch {
+      container.innerHTML = '<div class="schema-loading">Erreur de chargement</div>';
+    }
+  }
+
+  // Fermer la modal shortcut en cliquant sur l'overlay
+  document.getElementById('shortcut-modal').addEventListener('click', function(e) {
+    if (e.target === this) closeShortcutModal();
   });
 
   // Init
   checkHealth();
   loadSchema();
+  loadShortcuts();
 </script>
 </body>
 </html>

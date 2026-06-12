@@ -86,3 +86,13 @@
 2026-06-12 15:17:00.994 | INFO     | routes.register:register:170 - Session créée (demo) → 71a593fb…
 2026-06-12 15:17:09.374 | INFO     | routes.chat:chat_schema:79 - [schema] 7 tables parsées pour demo
 2026-06-12 15:17:21.089 | INFO     | routes.chat:chat_schema:79 - [schema] 7 tables parsées pour demo
+2026-06-12 16:31:34.012 | INFO     | routes.register:register:170 - Session créée (postgresql) → 6650beb8…
+2026-06-12 16:31:41.059 | INFO     | routes.chat:chat_schema:79 - [schema] 7 tables parsées pour postgresql
+2026-06-12 17:15:33.366 | INFO     | routes.register:register:170 - Session créée (postgresql) → 06e44500…
+2026-06-12 17:15:40.145 | INFO     | routes.chat:chat_schema:79 - [schema] 7 tables parsées pour postgresql
+2026-06-12 17:16:43.008 | INFO     | core.shortcuts_store:add_shortcut:54 - [shortcuts] Ajouté : 941ac46f → 'Produit-renta'
+2026-06-12 17:16:43.008 | INFO     | routes.chat:chat_shortcuts_add:190 - [06e44500] Raccourci ajouté : 'Produit-renta'
+2026-06-12 17:16:46.807 | INFO     | routes.chat:chat_message:45 - [06e44500] USER >> Quelles est le produit le plus rentable ?
+2026-06-12 17:16:50.013 | INFO     | core.agent:run_agent:50 - [agent] tool=query_data args={'session_id': 'c47843f0-d6dc-45fd-b859-6e6b785189ab', 'sql_query': 'SELECT p.nom_produit, SUM(pp.montant_paye) AS total_paye \nFROM public.produits p\nJOIN public.souscriptions s ON p.id_produit = s.id_produit\nJOIN public.paiements_primes pp ON s.id_souscription = pp.id_souscription\nGROUP BY p.nom_produit\nORDER BY total_paye DESC\nLIMIT 1;'}
+2026-06-12 17:16:51.699 | INFO     | core.agent:run_agent:90 - [agent] final_answer: Le produit le plus rentable est l'**Assurance Retraite Gold** avec un total de paiements reçus de 3,600,000.00.
+2026-06-12 17:16:51.699 | INFO     | routes.chat:chat_message:47 - [06e44500] AI   >> Le produit le plus rentable est l'**Assurance Retraite Gold** avec un total de paiements reçus de 3,600,000.00.
